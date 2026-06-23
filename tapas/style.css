@@ -76,3 +76,15 @@ button.play-circular:active {
     font-weight: 800;
     letter-spacing: 4px;
 }
+
+/* Break Overlay Styling */
+window.break-overlay-window {
+    background-color: rgba(0, 0, 0, 0.70);
+    color: white;
+}
+
+.overlay-quote {
+    font-size: 20px;
+    font-weight: 500;
+    opacity: 0.8;
+}

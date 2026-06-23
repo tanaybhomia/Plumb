@@ -56,6 +56,10 @@ class TapasApplication(Adw.Application):
             css_provider, 
             Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
         )
+        
+        icon_theme = Gtk.IconTheme.get_for_display(Gdk.Display.get_default())
+        icons_path = os.path.join(os.path.dirname(__file__), "..", "assets", "icons")
+        icon_theme.add_search_path(os.path.abspath(icons_path))
 
         win = self.props.active_window
         if not win:

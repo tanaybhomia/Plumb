@@ -6,6 +6,73 @@ from gi.repository import Gtk, Adw, Gdk, Gio, GObject, GLib
 from tapas.timer import TimerLogic, StopwatchLogic
 from tapas.database import db
 
+import random
+
+class BreakOverlayWindow(Gtk.Window):
+    def __init__(self, on_dismiss_cb, show_quotes=True, **kwargs):
+        super().__init__(**kwargs)
+        self.on_dismiss_cb = on_dismiss_cb
+        self.set_decorated(False)
+        self.remove_css_class("background")
+        self.add_css_class("break-overlay-window")
+        
+        main_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        
+        center_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=48)
+        center_vbox.set_valign(Gtk.Align.CENTER)
+        center_vbox.set_halign(Gtk.Align.CENTER)
+        center_vbox.set_vexpand(True)
+        
+        title = Gtk.Label(label="Take a Break")
+        title.add_css_class("title-1")
+        
+        self.time_label = Gtk.Label(label="00:00")
+        self.time_label.add_css_class("huge-timer")
+        
+        dismiss_btn = Gtk.Button(label="Dismiss (Esc)")
+        dismiss_btn.add_css_class("pill")
+        dismiss_btn.connect("clicked", self._on_dismiss)
+        
+        center_vbox.append(title)
+        center_vbox.append(self.time_label)
+        center_vbox.append(dismiss_btn)
+        
+        main_vbox.append(center_vbox)
+        
+        if show_quotes:
+            quotes = [
+                "Time to stretch those legs!",
+                "Grab a glass of water.",
+                "Look away from the screen for 20 seconds.",
+                "Your eyes will thank you.",
+                "Resting is productive too.",
+                "Take a deep breath and relax."
+            ]
+            quote_label = Gtk.Label(label=random.choice(quotes))
+            quote_label.add_css_class("overlay-quote")
+            quote_label.set_margin_bottom(48)
+            quote_label.set_halign(Gtk.Align.CENTER)
+            main_vbox.append(quote_label)
+            
+        self.set_content(main_vbox)
+        
+        key_ctrl = Gtk.EventControllerKey.new()
+        key_ctrl.connect("key-pressed", self._on_key_pressed)
+        self.add_controller(key_ctrl)
+        
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self._on_dismiss(None)
+            return True
+        return False
+        
+    def _on_dismiss(self, button):
+        if self.on_dismiss_cb:
+            self.on_dismiss_cb()
+            
+    def update_time(self, time_str):
+        self.time_label.set_label(time_str)
+
 class TapasWindow(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -19,6 +86,8 @@ class TapasWindow(Adw.ApplicationWindow):
         self.timer.on_finish_callback = self._on_timer_finish
         self.timer.on_warning_callback = self._on_timer_warning
         self.timer.on_run_state_change_callback = self._set_running_ui_state
+        
+        self._overlays = []
 
         self.stopwatch = StopwatchLogic()
         self.stopwatch.on_tick_callback = self._on_stopwatch_tick
@@ -262,6 +331,9 @@ class TapasWindow(Adw.ApplicationWindow):
             self.project_dropdown.remove_css_class("pill")
             self.project_dropdown.add_css_class("flat")
             self.project_dropdown.add_css_class("title-4")
+            
+            if self.timer.state in ["Short Break", "Long Break"] and self.timer.enable_screen_overlay:
+                self._show_overlays()
         else:
             self.play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.restart_btn.set_sensitive(True)
@@ -305,6 +377,10 @@ class TapasWindow(Adw.ApplicationWindow):
         tot_sec = total_time % 60
         self.total_label.set_label(f"{tot_min:02d}:{tot_sec:02d}")
         
+        time_str = f"{time_left // 60:02d}:{time_left % 60:02d}"
+        for o in self._overlays:
+            o.update_time(time_str)
+        
         if total_time > 0:
             self.progress_bar.set_fraction(elapsed_time / total_time)
         else:
@@ -325,6 +401,7 @@ class TapasWindow(Adw.ApplicationWindow):
         if new_state == "Focus":
             self.progress_bar.add_css_class("focus-state")
             self.add_css_class("focus-window")
+            self._hide_overlays()
         elif new_state == "Short Break":
             self.progress_bar.add_css_class("short-break-state")
             self.add_css_class("short-break-window")
@@ -335,9 +412,30 @@ class TapasWindow(Adw.ApplicationWindow):
         self._update_time_display()
         self._set_running_ui_state(False)
 
+    def _show_overlays(self):
+        self._hide_overlays()
+        display = Gdk.Display.get_default()
+        monitors = display.get_monitors()
+        app = self.get_application()
+        
+        for i in range(monitors.get_n_items()):
+            monitor = monitors.get_item(i)
+            overlay = BreakOverlayWindow(self._hide_overlays, show_quotes=self.timer.show_overlay_quotes, application=app)
+            overlay.fullscreen_on_monitor(monitor)
+            overlay.present()
+            self._overlays.append(overlay)
+            
+        self._update_time_display()
+            
+    def _hide_overlays(self):
+        for o in self._overlays:
+            o.close()
+        self._overlays.clear()
+
     def _on_timer_warning(self):
-        if self.timer.state == "Focus":
-            self._send_notification("Pomodoro Finishing Soon", "10 seconds remaining! Get ready to take a break.", False)
+        msg = "Get ready to take a break." if self.timer.state == "Focus" else "Get ready to focus."
+        title = "Pomodoro Finishing Soon" if self.timer.state == "Focus" else "Break Finishing Soon"
+        self._send_notification(title, f"10 seconds remaining! {msg}", False)
 
     def _send_notification(self, title, body, show_break_actions=False):
         notification = Gio.Notification.new(title)

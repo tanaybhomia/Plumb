@@ -75,7 +75,47 @@ class TapasPreferencesWindow(Adw.PreferencesWindow):
         self.confirm_pomo_row.add_suffix(self.confirm_pomo_switch)
         behavior_group.add(self.confirm_pomo_row)
         
-        self.add(Adw.PreferencesPage(title="Notifications", icon_name="appointment-soon-symbolic"))
+        notif_page = Adw.PreferencesPage(title="Notifications", icon_name="appointment-soon-symbolic")
+        
+        ann_group = Adw.PreferencesGroup(title="Announcements")
+        self.notify_row = Adw.ActionRow(title="Time Running Out", subtitle="Notify when Pomodoro or break is about to end.")
+        self.notify_switch = Gtk.Switch(active=self.timer.notify_running_out if self.timer else True, valign=Gtk.Align.CENTER)
+        self.notify_switch.connect("notify::active", self._on_notify_running_out_changed)
+        self.notify_row.add_suffix(self.notify_switch)
+        ann_group.add(self.notify_row)
+        notif_page.add(ann_group)
+        
+        overlay_group = Adw.PreferencesGroup(title="Screen Overlay", description="A full-screen notification intended to enforce taking a break.")
+        
+        self.overlay_row = Adw.ActionRow(title="Screen Overlay")
+        self.overlay_switch = Gtk.Switch(active=self.timer.enable_screen_overlay if self.timer else False, valign=Gtk.Align.CENTER)
+        self.overlay_switch.connect("notify::active", self._on_overlay_changed)
+        self.overlay_row.add_suffix(self.overlay_switch)
+        overlay_group.add(self.overlay_row)
+        
+        self.quotes_row = Adw.ActionRow(title="Show Fun Quotes", subtitle="Display a random quote at the bottom of the screen overlay.")
+        self.quotes_switch = Gtk.Switch(active=self.timer.show_overlay_quotes if self.timer else True, valign=Gtk.Align.CENTER)
+        self.quotes_switch.connect("notify::active", self._on_quotes_changed)
+        self.quotes_row.add_suffix(self.quotes_switch)
+        overlay_group.add(self.quotes_row)
+        
+        self.lock_row = Adw.ComboRow(title="Lock Delay", subtitle="Period of inactivity to lock the screen.")
+        self.lock_model = Gtk.StringList.new(["Never", "1 minute", "5 minutes"])
+        self.lock_row.set_model(self.lock_model)
+        self._set_combo_selected_string(self.lock_row, self.lock_model, self.timer.lock_delay if self.timer else "Never")
+        self.lock_row.connect("notify::selected-item", self._on_lock_delay_changed)
+        overlay_group.add(self.lock_row)
+        
+        self.reopen_row = Adw.ComboRow(title="Reopen Delay", subtitle="Period of inactivity to reopen the overlay after it gets dismissed.")
+        self.reopen_model = Gtk.StringList.new(["30 seconds", "1 minute", "5 minutes"])
+        self.reopen_row.set_model(self.reopen_model)
+        self._set_combo_selected_string(self.reopen_row, self.reopen_model, self.timer.reopen_delay if self.timer else "30 seconds")
+        self.reopen_row.connect("notify::selected-item", self._on_reopen_delay_changed)
+        overlay_group.add(self.reopen_row)
+        
+        notif_page.add(overlay_group)
+        self.add(notif_page)
+        
         self.add(Adw.PreferencesPage(title="Sounds", icon_name="audio-volume-high-symbolic"))
         self.add(Adw.PreferencesPage(title="Appearance", icon_name="applications-graphics-symbolic"))
         self.add(Adw.PreferencesPage(title="Keyboard Shortcuts", icon_name="input-keyboard-symbolic"))
@@ -131,3 +171,36 @@ class TapasPreferencesWindow(Adw.PreferencesWindow):
         if self.timer:
             self.timer.auto_start_pomodoros = not switch.get_active()
             db.set_setting("auto_start_pomodoros", str(self.timer.auto_start_pomodoros))
+
+    def _set_combo_selected_string(self, combo, model, target_string):
+        for i in range(model.get_n_items()):
+            if model.get_string(i) == target_string:
+                combo.set_selected(i)
+                return
+
+    def _on_notify_running_out_changed(self, switch, param):
+        if self.timer:
+            self.timer.notify_running_out = switch.get_active()
+            db.set_setting("notify_running_out", str(self.timer.notify_running_out))
+
+    def _on_overlay_changed(self, switch, param):
+        if self.timer:
+            self.timer.enable_screen_overlay = switch.get_active()
+            db.set_setting("enable_screen_overlay", str(self.timer.enable_screen_overlay))
+
+    def _on_quotes_changed(self, switch, param):
+        if self.timer:
+            self.timer.show_overlay_quotes = switch.get_active()
+            db.set_setting("show_overlay_quotes", str(self.timer.show_overlay_quotes))
+
+    def _on_lock_delay_changed(self, combo, param):
+        if self.timer:
+            selected_str = self.lock_model.get_string(combo.get_selected())
+            self.timer.lock_delay = selected_str
+            db.set_setting("lock_delay", selected_str)
+
+    def _on_reopen_delay_changed(self, combo, param):
+        if self.timer:
+            selected_str = self.reopen_model.get_string(combo.get_selected())
+            self.timer.reopen_delay = selected_str
+            db.set_setting("reopen_delay", selected_str)

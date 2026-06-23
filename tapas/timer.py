@@ -28,6 +28,12 @@ class TimerLogic:
         self.auto_start_pomodoros = db.get_setting("auto_start_pomodoros", "False") == "True"
         self.pause_on_lock = db.get_setting("pause_on_lock", "True") == "True"
         
+        self.notify_running_out = db.get_setting("notify_running_out", "True") == "True"
+        self.enable_screen_overlay = db.get_setting("enable_screen_overlay", "False") == "True"
+        self.lock_delay = db.get_setting("lock_delay", "Never")
+        self.reopen_delay = db.get_setting("reopen_delay", "30 seconds")
+        self.show_overlay_quotes = db.get_setting("show_overlay_quotes", "True") == "True"
+        
         # Callbacks that the UI can hook into
         self.on_tick_callback = None
         self.on_finish_callback = None
@@ -101,7 +107,7 @@ class TimerLogic:
 
         if self.time_left > 0:
             self.time_left -= 1
-            if self.time_left == 10 and self.on_warning_callback:
+            if self.time_left == 10 and self.on_warning_callback and self.notify_running_out:
                 self.on_warning_callback()
             if self.on_tick_callback:
                 self.on_tick_callback(self.time_left)
