@@ -96,7 +96,9 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.stopwatch.on_tick_callback = self._on_stopwatch_tick
 
         self.toolbar_view = Adw.ToolbarView()
-        self.set_content(self.toolbar_view)
+        self.toast_overlay = Adw.ToastOverlay()
+        self.toast_overlay.set_child(self.toolbar_view)
+        self.set_content(self.toast_overlay)
 
         self.header = Adw.HeaderBar()
         self.toolbar_view.add_top_bar(self.header)
@@ -385,17 +387,25 @@ class PlumbWindow(Adw.ApplicationWindow):
     def _set_running_ui_state(self, is_running):
         self.switcher_bar.set_sensitive(not is_running)
         self.carousel.set_interactive(not is_running)
+        
+        is_active = is_running or self.timer.time_left < (self.timer.durations.get(self.timer.state, 0) * 60)
+
+        self.project_dropdown.set_sensitive(not is_active)
+        self.project_dropdown.set_show_arrow(not is_active)
+        
+        if is_active:
+            self.project_dropdown.remove_css_class("pill")
+            self.project_dropdown.add_css_class("flat")
+            self.project_dropdown.add_css_class("title-4")
+        else:
+            self.project_dropdown.remove_css_class("flat")
+            self.project_dropdown.remove_css_class("title-4")
+            self.project_dropdown.add_css_class("pill")
 
         if is_running:
             self.play_pause_btn.set_icon_name("media-playback-pause-symbolic")
             self.restart_btn.set_sensitive(False)
             self.break_btn.set_sensitive(False)
-
-            self.project_dropdown.set_sensitive(False)
-            self.project_dropdown.set_show_arrow(False)
-            self.project_dropdown.remove_css_class("pill")
-            self.project_dropdown.add_css_class("flat")
-            self.project_dropdown.add_css_class("title-4")
 
             if (
                 self.timer.state in ["Short Break", "Long Break"]
@@ -407,13 +417,11 @@ class PlumbWindow(Adw.ApplicationWindow):
             self.restart_btn.set_sensitive(True)
             self.break_btn.set_sensitive(True)
 
-            self.project_dropdown.set_sensitive(True)
-            self.project_dropdown.set_show_arrow(True)
-            self.project_dropdown.remove_css_class("flat")
-            self.project_dropdown.remove_css_class("title-4")
-            self.project_dropdown.add_css_class("pill")
-
     def _on_play_pause_clicked(self, button):
+        if self.stopwatch.is_running or self.stopwatch.elapsed_seconds > 0:
+            self._show_toast("Timer session is active")
+            return
+
         if self.timer.is_running:
             self.timer.pause()
             self._set_running_ui_state(False)
@@ -558,29 +566,36 @@ class PlumbWindow(Adw.ApplicationWindow):
     def _set_sw_running_ui_state(self, is_running):
         self.switcher_bar.set_sensitive(not is_running)
         self.carousel.set_interactive(not is_running)
+        
+        is_active = is_running or self.stopwatch.elapsed_seconds > 0
+
+        self.sw_project_dropdown.set_sensitive(not is_active)
+        self.sw_project_dropdown.set_show_arrow(not is_active)
+        
+        if is_active:
+            self.sw_project_dropdown.remove_css_class("pill")
+            self.sw_project_dropdown.add_css_class("flat")
+            self.sw_project_dropdown.add_css_class("title-4")
+        else:
+            self.sw_project_dropdown.remove_css_class("flat")
+            self.sw_project_dropdown.remove_css_class("title-4")
+            self.sw_project_dropdown.add_css_class("pill")
 
         if is_running:
             self.sw_play_pause_btn.set_icon_name("media-playback-pause-symbolic")
             self.sw_restart_btn.set_sensitive(False)
             self.sw_save_btn.set_sensitive(False)
-
-            self.sw_project_dropdown.set_sensitive(False)
-            self.sw_project_dropdown.set_show_arrow(False)
-            self.sw_project_dropdown.remove_css_class("pill")
-            self.sw_project_dropdown.add_css_class("flat")
-            self.sw_project_dropdown.add_css_class("title-4")
         else:
             self.sw_play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.sw_restart_btn.set_sensitive(True)
             self.sw_save_btn.set_sensitive(True)
 
-            self.sw_project_dropdown.set_sensitive(True)
-            self.sw_project_dropdown.set_show_arrow(True)
-            self.sw_project_dropdown.remove_css_class("flat")
-            self.sw_project_dropdown.remove_css_class("title-4")
-            self.sw_project_dropdown.add_css_class("pill")
-
     def _on_sw_play_pause_clicked(self, button):
+        is_pomodoro_active = self.timer.is_running or self.timer.time_left < (self.timer.durations.get(self.timer.state, 0) * 60)
+        if is_pomodoro_active:
+            self._show_toast("Pomodoro session is active")
+            return
+
         if self.stopwatch.is_running:
             self.stopwatch.pause()
             self._set_sw_running_ui_state(False)
@@ -597,11 +612,22 @@ class PlumbWindow(Adw.ApplicationWindow):
         selected_idx = self.sw_project_dropdown.get_selected()
         if selected_idx < len(self._projects_map):
             project_id = self._projects_map[selected_idx][0]
-            db.log_session(project_id, "timer", self.stopwatch.elapsed_seconds)
+            if self.stopwatch.elapsed_seconds >= 300:
+                db.log_session(project_id, "timer", self.stopwatch.elapsed_seconds)
+                self._show_toast("Timer session saved")
+            else:
+                self._show_toast("Session discarded (less than 5 mins)")
 
         self.stopwatch.reset()
         self._set_sw_running_ui_state(False)
         self._update_sw_time_display()
+
+    def _show_toast(self, message):
+        if hasattr(self, '_current_toast') and self._current_toast:
+            self._current_toast.dismiss()
+        self._current_toast = Adw.Toast.new(message)
+        self._current_toast.set_timeout(2)
+        self.toast_overlay.add_toast(self._current_toast)
 
     def _update_sw_time_display(self):
         secs = self.stopwatch.elapsed_seconds
