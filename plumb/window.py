@@ -290,7 +290,6 @@ class PlumbWindow(Adw.ApplicationWindow):
 
         self.project_dropdown = Gtk.DropDown.new(model=self._project_list)
         self.project_dropdown.connect("notify::selected", self._on_project_selected)
-        
         popover = self.project_dropdown.get_last_child()
         if popover:
             popover.set_halign(Gtk.Align.CENTER)

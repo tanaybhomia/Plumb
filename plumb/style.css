@@ -96,20 +96,17 @@ window.break-overlay-window {
 .compact-title {
     font-size: 18px;
     font-weight: 700;
-    color: white;
 }
 
 .compact-time {
     font-size: 18px;
     font-weight: 600;
     opacity: 0.5;
-    color: white;
 }
 
 .compact-progress > trough {
     min-height: 6px;
     border-radius: 3px;
-    background-color: #333333;
     margin-top: 8px;
     margin-bottom: 8px;
 }
@@ -123,11 +120,6 @@ button.compact-btn {
     min-width: 32px;
     min-height: 32px;
     border-radius: 16px;
-    color: white;
-}
-
-button.compact-btn:hover {
-    background-color: #333333;
 }
 
 /* Ironclad Theme */
@@ -174,6 +166,20 @@ window.ironclad-theme .title-1,
 window.ironclad-theme .title-4,
 window.ironclad-theme .cycle-indicator {
     color: white;
+}
+
+window.ironclad-theme popover > contents {
+    background-color: #1e1b1a;
+    color: white;
+}
+
+window.ironclad-theme popover > contents label {
+    color: white;
+}
+
+window.ironclad-theme popover > contents listview row:selected,
+window.ironclad-theme popover > contents listview row:hover {
+    background-color: rgba(230, 74, 25, 0.15);
 }
 
 window.ironclad-theme.compact-window {
