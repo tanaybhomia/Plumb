@@ -21,7 +21,7 @@
 </div>
 
 <div align="center">
-  <img alt="Plumb Main Interface" src="docs/assets/1-hero.png" style="max-width: 100%; height: auto;" />
+  <img alt="Plumb Main Interface" src="docs/assets/images/1-hero.png" style="max-width: 100%; height: auto;" />
 </div>
 
 
