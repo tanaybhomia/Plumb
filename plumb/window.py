@@ -427,8 +427,13 @@ class PlumbWindow(Adw.ApplicationWindow):
 
         if is_running:
             self.btn_ironclad.set_sensitive(False)
-            if self.is_ironclad and self.timer.state == "Focus":
+            master_enabled = db.get_setting("web_blocker_enabled", "False") == "True"
+            normal_enabled = db.get_setting("web_blocker_normal_mode", "False") == "True"
+            
+            if self.timer.state == "Focus" and master_enabled and (self.is_ironclad or normal_enabled):
                 self._block_websites()
+
+            if self.is_ironclad and self.timer.state == "Focus":
                 self.play_pause_btn.set_icon_name("security-high-symbolic")
                 self.play_pause_btn.set_sensitive(False)
                 
@@ -730,6 +735,12 @@ class PlumbWindow(Adw.ApplicationWindow):
 
         if is_running:
             self.btn_ironclad.set_sensitive(False)
+            master_enabled = db.get_setting("web_blocker_enabled", "False") == "True"
+            normal_enabled = db.get_setting("web_blocker_normal_mode", "False") == "True"
+            
+            if master_enabled and (self.is_ironclad or normal_enabled):
+                self._block_websites()
+
             if self.is_ironclad:
                 self.sw_play_pause_btn.set_icon_name("security-high-symbolic")
                 self.sw_play_pause_btn.set_sensitive(False)

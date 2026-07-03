@@ -472,7 +472,7 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         
         self.enable_blocker_row = Adw.ActionRow(
             title="Enable Web Blocker",
-            subtitle="Block listed websites during Ironclad mode. Requires root password."
+            subtitle="Master switch to enable blocking distracting websites."
         )
         self.enable_blocker_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         
@@ -482,6 +482,19 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         
         self.enable_blocker_row.add_suffix(self.enable_blocker_switch)
         enable_group.add(self.enable_blocker_row)
+        
+        self.block_normal_row = Adw.ActionRow(
+            title="Block in Normal Mode",
+            subtitle="Block websites even when Ironclad mode is disabled."
+        )
+        self.block_normal_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
+        
+        is_normal_blocked = db.get_setting("web_blocker_normal_mode", "False") == "True"
+        self.block_normal_switch.set_active(is_normal_blocked)
+        self.block_normal_switch.connect("notify::active", self._on_block_normal_changed)
+        
+        self.block_normal_row.add_suffix(self.block_normal_switch)
+        enable_group.add(self.block_normal_row)
         
         group = Adw.PreferencesGroup(
             title="Blocked Websites",
@@ -543,43 +556,51 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
     def _on_enable_blocker_changed(self, switch, param):
         is_enabled = switch.get_active()
         db.set_setting("web_blocker_enabled", str(is_enabled))
-        
         if is_enabled:
-            import os
-            rule_path = "/etc/polkit-1/rules.d/99-plumb-blocker.rules"
-            if not os.path.exists(rule_path):
-                dialog = Adw.MessageDialog(
-                    heading="Install Web Blocker?",
-                    body="To block websites seamlessly without asking for your password on every session, Plumb needs to install a one-time security rule.\n\nThis will require your password once to complete the setup.",
-                )
-                dialog.set_transient_for(self.get_root())
-                dialog.add_response("cancel", "Not Now")
-                dialog.add_response("install", "Install Rule")
-                dialog.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
-                
-                def on_response(dialog, response):
-                    if response == "install":
-                        import subprocess, sys, threading
-                        from gi.repository import GLib
-                        script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
-                        
-                        def wait_and_notify(proc, main_win):
-                            proc.wait()
-                            if proc.returncode == 0:
-                                GLib.idle_add(lambda: main_win.add_toast(Adw.Toast.new("Web Blocker rule fully installed!")))
-                            else:
-                                GLib.idle_add(lambda: main_win.add_toast(Adw.Toast.new("Installation cancelled or failed.")))
-                                
-                        try:
-                            proc = subprocess.Popen(["pkexec", "/usr/bin/env", "python3", script_path, "install"])
-                            main_win = self.get_transient_for()
-                            if main_win:
-                                toast = Adw.Toast.new("Rule installation started...")
-                                main_win.add_toast(toast)
-                                threading.Thread(target=wait_and_notify, args=(proc, main_win), daemon=True).start()
-                        except Exception as e:
-                            print(f"Failed to install rule: {e}")
-                
-                dialog.connect("response", on_response)
-                dialog.present()
+            self._check_install_polkit()
+        
+    def _on_block_normal_changed(self, switch, param):
+        is_enabled = switch.get_active()
+        db.set_setting("web_blocker_normal_mode", str(is_enabled))
+        if is_enabled:
+            self._check_install_polkit()
+            
+    def _check_install_polkit(self):
+        import os
+        rule_path = "/etc/polkit-1/rules.d/99-plumb-blocker.rules"
+        if not os.path.exists(rule_path):
+            dialog = Adw.MessageDialog(
+                heading="Install Web Blocker?",
+                body="To block websites seamlessly without asking for your password on every session, Plumb needs to install a one-time security rule.\n\nThis will require your password once to complete the setup.",
+            )
+            dialog.set_transient_for(self.get_root())
+            dialog.add_response("cancel", "Not Now")
+            dialog.add_response("install", "Install Rule")
+            dialog.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+            
+            def on_response(dialog, response):
+                if response == "install":
+                    import subprocess, sys, threading
+                    from gi.repository import GLib
+                    script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
+                    
+                    def wait_and_notify(proc, main_win):
+                        proc.wait()
+                        if proc.returncode == 0:
+                            GLib.idle_add(lambda: main_win.add_toast(Adw.Toast.new("Web Blocker rule fully installed!")))
+                        else:
+                            GLib.idle_add(lambda: main_win.add_toast(Adw.Toast.new("Installation cancelled or failed.")))
+                            
+                    try:
+                        proc = subprocess.Popen(["pkexec", "/usr/bin/env", "python3", script_path, "install"])
+                        main_win = self.get_transient_for()
+                        if main_win:
+                            toast = Adw.Toast.new("Rule installation started...")
+                            main_win.add_toast(toast)
+                            threading.Thread(target=wait_and_notify, args=(proc, main_win), daemon=True).start()
+                    except Exception as e:
+                        print(f"Failed to install rule: {e}")
+            
+            dialog.connect("response", on_response)
+            dialog.present()
 
