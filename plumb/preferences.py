@@ -25,14 +25,14 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
 
         pomo_val = self.timer.durations[TimerState.FOCUS] if self.timer else 55
         self.pomo_row = self._create_spin_row(
-            "Pomodoro Duration", "In minutes", 1, 90, pomo_val, self._on_pomo_changed
+            "Pomodoro Duration", "In minutes (Max: 120)", 1, 120, pomo_val, self._on_pomo_changed
         )
         session_group.add(self.pomo_row)
 
         short_val = self.timer.durations[TimerState.SHORT_BREAK] if self.timer else 5
         self.short_break_row = self._create_spin_row(
             "Short Break Duration",
-            "In minutes",
+            "In minutes (Max: 30)",
             1,
             30,
             short_val,
@@ -45,7 +45,7 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         )
         self.long_break_row = self._create_spin_row(
             "Long Break Duration",
-            "In minutes",
+            "In minutes (Max: 60)",
             1,
             60,
             long_val,
@@ -62,10 +62,10 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
                 page_increment=1,
                 page_size=0,
             )
-            self.cycles_row = Adw.SpinRow(title="Number of Cycles", adjustment=adj)
+            self.cycles_row = Adw.SpinRow(title="Number of Cycles", subtitle="Max: 10", adjustment=adj)
             self.cycles_row.connect("notify::value", lambda r, p: self._on_cycles_changed(int(r.get_value())))
         else:
-            self.cycles_row = Adw.ActionRow(title="Number of Cycles")
+            self.cycles_row = Adw.ActionRow(title="Number of Cycles", subtitle="Max: 10")
             self.cycles_spin = Gtk.SpinButton.new_with_range(1, 10, 1)
             self.cycles_spin.set_valign(Gtk.Align.CENTER)
             self.cycles_spin.set_value(self.timer.cycles if self.timer else 4)

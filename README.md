@@ -8,7 +8,7 @@
     <img src="https://flathub.org/api/badge?svg&locale=en" alt="Download on Flathub" height="50">
   </a>
   <a href="https://ko-fi.com/tanaybhomia">
-    <img src="docs/assets/support_me_on_kofi_badge_red.png" alt="Support me on Ko-fi" height="50">
+    <img src="docs/images/support_me_on_kofi_badge_red.png" alt="Support me on Ko-fi" height="50">
   </a>
   <br><br>
   
@@ -21,7 +21,7 @@
 </div>
 
 <div align="center">
-  <img alt="Plumb Main Interface" src="docs/assets/images/1-hero.png" style="max-width: 100%; height: auto;" />
+  <img alt="Plumb Main Interface" src="docs/images/1-hero.png" style="max-width: 100%; height: auto;" />
 </div>
 
 
