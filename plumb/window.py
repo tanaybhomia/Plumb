@@ -427,6 +427,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         if is_running:
             self.btn_ironclad.set_sensitive(False)
             if self.is_ironclad and self.timer.state == "Focus":
+                self._block_websites()
                 self.play_pause_btn.set_icon_name("security-high-symbolic")
                 self.play_pause_btn.set_sensitive(False)
                 
@@ -450,6 +451,7 @@ class PlumbWindow(Adw.ApplicationWindow):
                 self._show_overlays()
         else:
             self.btn_ironclad.set_sensitive(True)
+            self._unblock_websites()
             self.play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.play_pause_btn.set_sensitive(True)
             self.restart_btn.set_sensitive(True)
@@ -475,6 +477,38 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.timer.reset()
         self._set_running_ui_state(False)
         self._update_time_display()
+
+    def _block_websites(self):
+        is_enabled = db.get_setting("web_blocker_enabled", "False") == "True"
+        if not is_enabled:
+            return
+            
+        websites = [d for _, d in db.get_websites()]
+        if not websites:
+            return
+            
+        domains_str = ",".join(websites)
+        import os, subprocess
+        script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
+        
+        try:
+            subprocess.Popen(["pkexec", script_path, "block", domains_str])
+            self._is_blocked = True
+        except Exception as e:
+            print(f"Failed to start blocker: {e}")
+
+    def _unblock_websites(self):
+        if not getattr(self, "_is_blocked", False):
+            return
+            
+        import os, subprocess
+        script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
+        
+        try:
+            subprocess.Popen(["pkexec", script_path, "unblock"])
+            self._is_blocked = False
+        except Exception as e:
+            print(f"Failed to start unblocker: {e}")
 
     def _on_break_clicked(self, button):
         if self.timer.state == "Focus" and self.is_ironclad and self.timer.is_running:
