@@ -53,6 +53,17 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         )
         session_group.add(self.long_break_row)
 
+        sw_min_val = int(db.get_setting("sw_min_save_time", "25"))
+        self.sw_min_row = self._create_spin_row(
+            "Stopwatch Minimum Save Time",
+            "In minutes (Max: 120)",
+            1,
+            120,
+            sw_min_val,
+            self._on_sw_min_changed,
+        )
+        session_group.add(self.sw_min_row)
+        
         if hasattr(Adw, "SpinRow"):
             adj = Gtk.Adjustment(
                 value=self.timer.cycles if self.timer else 4,
@@ -266,6 +277,9 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
             TimerState.LONG_BREAK, value, getattr(self, "long_break_row", None)
         )
         self._update_summary_label()
+        
+    def _on_sw_min_changed(self, value):
+        db.set_setting("sw_min_save_time", str(int(value)))
         
     def _on_cycles_changed(self, value):
         if self.timer:

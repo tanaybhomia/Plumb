@@ -287,6 +287,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.project_dropdown_stack = Gtk.Stack()
         self.project_dropdown_stack.set_transition_type(Gtk.StackTransitionType.CROSSFADE)
         self.project_dropdown_stack.set_halign(Gtk.Align.CENTER)
+        self.project_dropdown_stack.set_hhomogeneous(False)
 
         self.project_dropdown = Gtk.DropDown.new(model=self._project_list)
         self.project_dropdown.connect("notify::selected", self._on_project_selected)
@@ -450,11 +451,16 @@ class PlumbWindow(Adw.ApplicationWindow):
             ):
                 self._show_overlays()
         else:
-            self.btn_ironclad.set_sensitive(True)
+            if not getattr(self, "stopwatch", None) or not self.stopwatch.is_running:
+                self.btn_ironclad.set_sensitive(True)
+                
             self._unblock_websites()
             self.play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.play_pause_btn.set_sensitive(True)
-            self.restart_btn.set_sensitive(True)
+            
+            total_time = self.timer.durations[self.timer.state] * 60
+            has_started = self.timer.time_left < total_time
+            self.restart_btn.set_sensitive(has_started)
             self.break_btn.set_label("Skip")
             self.break_btn.remove_css_class("destructive-action")
             self.break_btn.set_sensitive(True)
@@ -723,13 +729,39 @@ class PlumbWindow(Adw.ApplicationWindow):
             self.sw_project_dropdown.add_css_class("pill")
 
         if is_running:
-            self.sw_play_pause_btn.set_icon_name("media-playback-pause-symbolic")
-            self.sw_restart_btn.set_sensitive(False)
-            self.sw_save_btn.set_sensitive(False)
+            self.btn_ironclad.set_sensitive(False)
+            if self.is_ironclad:
+                self.sw_play_pause_btn.set_icon_name("security-high-symbolic")
+                self.sw_play_pause_btn.set_sensitive(False)
+                
+                self.sw_restart_btn.set_label("Give Up")
+                self.sw_restart_btn.add_css_class("destructive-action")
+                self.sw_restart_btn.set_sensitive(True)
+                
+                min_save_time = int(db.get_setting("sw_min_save_time", "25")) * 60
+                self.sw_save_btn.set_sensitive(self.stopwatch.elapsed_seconds >= min_save_time)
+            else:
+                self.sw_play_pause_btn.set_icon_name("media-playback-pause-symbolic")
+                self.sw_play_pause_btn.set_sensitive(True)
+                
+                self.sw_restart_btn.set_label("Restart")
+                self.sw_restart_btn.remove_css_class("destructive-action")
+                self.sw_restart_btn.set_sensitive(False)
+                
+                self.sw_save_btn.set_sensitive(False)
         else:
+            if not getattr(self, "timer", None) or not self.timer.is_running:
+                self.btn_ironclad.set_sensitive(True)
+                
             self.sw_play_pause_btn.set_icon_name("media-playback-start-symbolic")
-            self.sw_restart_btn.set_sensitive(True)
-            self.sw_save_btn.set_sensitive(True)
+            self.sw_play_pause_btn.set_sensitive(True)
+            
+            self.sw_restart_btn.set_label("Restart")
+            self.sw_restart_btn.remove_css_class("destructive-action")
+            
+            has_started = self.stopwatch.elapsed_seconds > 0
+            self.sw_restart_btn.set_sensitive(has_started)
+            self.sw_save_btn.set_sensitive(has_started)
 
     def _on_sw_play_pause_clicked(self, button):
         is_pomodoro_active = self.timer.is_running or self.timer.time_left < (self.timer.durations.get(self.timer.state, 0) * 60)
@@ -745,6 +777,26 @@ class PlumbWindow(Adw.ApplicationWindow):
             self._set_sw_running_ui_state(True)
 
     def _on_sw_restart_clicked(self, button):
+        if self.is_ironclad and self.stopwatch.is_running:
+            dialog = Adw.MessageDialog(
+                heading="Give Up?",
+                body="You are in Ironclad Mode. Giving up will discard this tracked time entirely.",
+            )
+            dialog.set_transient_for(self)
+            dialog.add_response("cancel", "Keep Working")
+            dialog.add_response("give_up", "Give Up")
+            dialog.set_response_appearance("give_up", Adw.ResponseAppearance.DESTRUCTIVE)
+            
+            def on_response(dialog, response):
+                if response == "give_up":
+                    self.stopwatch.pause()
+                    self.stopwatch.reset()
+                    self._set_sw_running_ui_state(False)
+                    self._update_sw_time_display()
+            dialog.connect("response", on_response)
+            dialog.present()
+            return
+
         self.stopwatch.reset()
         self._set_sw_running_ui_state(False)
         self._update_sw_time_display()
@@ -775,6 +827,10 @@ class PlumbWindow(Adw.ApplicationWindow):
         m = secs // 60
         s = secs % 60
         self.sw_time_label.set_label(f"{m:02d}:{s:02d}")
+        
+        if self.is_ironclad and self.stopwatch.is_running:
+            min_save_time = int(db.get_setting("sw_min_save_time", "25")) * 60
+            self.sw_save_btn.set_sensitive(secs >= min_save_time)
         
         if hasattr(self, 'compact_window') and self.compact_window.get_visible():
             self.compact_window.update_display()
