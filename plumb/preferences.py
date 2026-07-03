@@ -20,7 +20,7 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         )
         self.add(timer_page)
 
-        session_group = Adw.PreferencesGroup(title="Session")
+        session_group = Adw.PreferencesGroup(title="Pomodoro")
         timer_page.add(session_group)
 
         pomo_val = self.timer.durations[TimerState.FOCUS] if self.timer else 55
@@ -55,14 +55,13 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
 
         sw_min_val = int(db.get_setting("sw_min_save_time", "25"))
         self.sw_min_row = self._create_spin_row(
-            "Stopwatch Minimum Save Time",
+            "Minimum Save Time",
             "In minutes (Max: 120)",
             1,
             120,
             sw_min_val,
             self._on_sw_min_changed,
         )
-        session_group.add(self.sw_min_row)
         
         if hasattr(Adw, "SpinRow"):
             adj = Gtk.Adjustment(
@@ -88,10 +87,14 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         self.summary_label = Gtk.Label()
         self.summary_label.set_halign(Gtk.Align.START)
         self.summary_label.set_margin_top(16)
-        self.summary_label.set_margin_bottom(16)
+        self.summary_label.set_margin_bottom(0)
         self.summary_label.add_css_class("dim-label")
         session_group.add(self.summary_label)
         self._update_summary_label()
+
+        timer_group = Adw.PreferencesGroup(title="Timer")
+        timer_page.add(timer_group)
+        timer_group.add(self.sw_min_row)
 
         behavior_group = Adw.PreferencesGroup(title="Behavior")
         timer_page.add(behavior_group)
