@@ -500,26 +500,34 @@ class PlumbWindow(Adw.ApplicationWindow):
             
         domains_str = ",".join(websites)
         import os, subprocess
-        script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "blocker.py"))
         
         try:
-            subprocess.Popen(["pkexec", script_path, "block", domains_str])
+            result = subprocess.run(["sudo", "-n", "/usr/bin/python3", script_path, "block", domains_str], capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"Failed to start blocker: {result.stderr}")
+                from gi.repository import GLib, Adw
+                GLib.idle_add(lambda: self.toast_overlay.add_toast(Adw.Toast.new(f"Blocker Error: {result.stderr.strip()}"[:80])))
             self._is_blocked = True
         except Exception as e:
-            print(f"Failed to start blocker: {e}")
+            print(f"Exception starting blocker: {e}")
 
     def _unblock_websites(self):
         if not getattr(self, "_is_blocked", False):
             return
             
         import os, subprocess
-        script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
+        script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "blocker.py"))
         
         try:
-            subprocess.Popen(["pkexec", script_path, "unblock"])
+            result = subprocess.run(["sudo", "-n", "/usr/bin/python3", script_path, "unblock"], capture_output=True, text=True)
+            if result.returncode != 0:
+                print(f"Failed to unblock: {result.stderr}")
+                from gi.repository import GLib, Adw
+                GLib.idle_add(lambda: self.toast_overlay.add_toast(Adw.Toast.new(f"Unblock Error: {result.stderr.strip()}"[:80])))
             self._is_blocked = False
         except Exception as e:
-            print(f"Failed to start unblocker: {e}")
+            print(f"Exception unblocking: {e}")
 
     def _on_break_clicked(self, button):
         if self.timer.state == "Focus" and self.is_ironclad and self.timer.is_running:

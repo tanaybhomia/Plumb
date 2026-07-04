@@ -470,6 +470,8 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         enable_group = Adw.PreferencesGroup()
         blocker_page.add(enable_group)
         
+        self._is_initializing = True
+        
         self.enable_blocker_row = Adw.ActionRow(
             title="Enable Web Blocker",
             subtitle="Master switch to enable blocking distracting websites."
@@ -495,6 +497,8 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         
         self.block_normal_row.add_suffix(self.block_normal_switch)
         enable_group.add(self.block_normal_row)
+        
+        self._is_initializing = False
         
         group = Adw.PreferencesGroup(
             title="Blocked Websites",
@@ -540,6 +544,19 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
             self.websites_list_group.add(row)
             self._website_rows.append(row)
 
+    def _show_msg(self, heading, body):
+        dialog = Adw.MessageDialog(
+            heading=heading,
+            body=body,
+        )
+        dialog.add_response("ok", "OK")
+        dialog.set_default_response("ok")
+        try:
+            dialog.set_transient_for(self.get_root())
+        except Exception:
+            pass
+        dialog.present()
+        
     def _on_add_website(self, btn):
         domain = self.new_website_entry.get_text().strip()
         if not domain:
@@ -554,53 +571,66 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
             self.add_toast(toast)
 
     def _on_enable_blocker_changed(self, switch, param):
+        if getattr(self, "_is_initializing", False):
+            return
         is_enabled = switch.get_active()
         db.set_setting("web_blocker_enabled", str(is_enabled))
         if is_enabled:
             self._check_install_polkit()
         
     def _on_block_normal_changed(self, switch, param):
+        if getattr(self, "_is_initializing", False):
+            return
         is_enabled = switch.get_active()
         db.set_setting("web_blocker_normal_mode", str(is_enabled))
         if is_enabled:
             self._check_install_polkit()
             
     def _check_install_polkit(self):
-        import os
-        rule_path = "/etc/polkit-1/rules.d/99-plumb-blocker.rules"
-        if not os.path.exists(rule_path):
-            dialog = Adw.MessageDialog(
-                heading="Install Web Blocker?",
-                body="To block websites seamlessly without asking for your password on every session, Plumb needs to install a one-time security rule.\n\nThis will require your password once to complete the setup.",
-            )
-            dialog.set_transient_for(self.get_root())
-            dialog.add_response("cancel", "Not Now")
-            dialog.add_response("install", "Install Rule")
-            dialog.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+        if db.get_setting("polkit_installed", "False") == "True":
+            return
+
+        if getattr(self, "_install_dialog_open", False):
+            return
             
-            def on_response(dialog, response):
-                if response == "install":
-                    import subprocess, sys, threading
-                    from gi.repository import GLib
-                    script_path = os.path.join(os.path.dirname(__file__), "blocker.py")
-                    
-                    def wait_and_notify(proc, main_win):
-                        proc.wait()
-                        if proc.returncode == 0:
-                            GLib.idle_add(lambda: main_win.add_toast(Adw.Toast.new("Web Blocker rule fully installed!")))
-                        else:
-                            GLib.idle_add(lambda: main_win.add_toast(Adw.Toast.new("Installation cancelled or failed.")))
-                            
+        self._install_dialog_open = True
+
+        dialog = Adw.MessageDialog(
+            heading="Install Web Blocker?",
+            body="To block websites seamlessly without asking for your password on every session, Plumb needs to install a one-time security rule.\n\nThis will require your password once to complete the setup.",
+        )
+        dialog.set_transient_for(self.get_root())
+        dialog.add_response("cancel", "Not Now")
+        dialog.add_response("install", "Install Rule")
+        dialog.set_response_appearance("install", Adw.ResponseAppearance.SUGGESTED)
+        
+        def on_response(dlg, response):
+            self._install_dialog_open = False
+            if response == "install":
+                import subprocess, sys, threading, os
+                from gi.repository import GLib
+                script_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "blocker.py"))
+                
+                def run_installation(pref_win):
                     try:
-                        proc = subprocess.Popen(["pkexec", "/usr/bin/env", "python3", script_path, "install"])
-                        main_win = self.get_transient_for()
-                        if main_win:
-                            toast = Adw.Toast.new("Rule installation started...")
-                            main_win.add_toast(toast)
-                            threading.Thread(target=wait_and_notify, args=(proc, main_win), daemon=True).start()
+                        result = subprocess.run(
+                            ["pkexec", "/usr/bin/python3", script_path, "install"],
+                            capture_output=True, text=True
+                        )
+                        if result.returncode == 0:
+                            print("Installation successful!")
+                            GLib.idle_add(lambda: db.set_setting("polkit_installed", "True"))
+                            GLib.idle_add(lambda: pref_win._show_msg("Success", "Web Blocker rule fully installed!"))
+                        else:
+                            err = result.stderr.strip() or result.stdout.strip() or "Unknown error"
+                            print(f"Installation failed: {result.returncode} - {err}")
+                            GLib.idle_add(lambda: pref_win._show_msg("Installation Failed", f"Error ({result.returncode}): {err}"))
                     except Exception as e:
-                        print(f"Failed to install rule: {e}")
-            
-            dialog.connect("response", on_response)
-            dialog.present()
+                        print(f"Installation exception: {e}")
+                        GLib.idle_add(lambda: pref_win._show_msg("Exception", str(e)))
+                        
+                threading.Thread(target=run_installation, args=(self,), daemon=True).start()
+        
+        dialog.connect("response", on_response)
+        dialog.present()
 

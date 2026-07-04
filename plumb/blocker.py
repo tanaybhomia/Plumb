@@ -49,6 +49,8 @@ def block_domains(domains):
         if d:
             block_lines.append(f"127.0.0.1\t{d}")
             block_lines.append(f"127.0.0.1\twww.{d}")
+            block_lines.append(f"::1\t{d}")
+            block_lines.append(f"::1\twww.{d}")
     block_lines.append(BLOCK_MARKER_END)
     block_lines.append("") # trailing newline
     
@@ -62,20 +64,15 @@ def unblock_domains():
 
 def install_polkit():
     script_path = os.path.abspath(__file__)
-    polkit_content = f"""polkit.addRule(function(action, subject) {{
-    if (action.id == "org.freedesktop.policykit.exec" &&
-        action.lookup("program") == "{script_path}") {{
-        return polkit.Result.YES;
-    }}
-}});
-"""
-    rule_path = "/etc/polkit-1/rules.d/99-plumb-blocker.rules"
+    # We use sudoers.d because pkexec does not reliably grant passwordless execution to interpreted scripts
+    sudoers_content = f"ALL ALL=(root) NOPASSWD: /usr/bin/python3 {script_path} *\n"
+    rule_path = "/etc/sudoers.d/99-plumb-blocker"
     
-    # Try older pkla for systems that use it if .rules isn't standard, but .rules is safer to attempt first.
-    # Actually, we will just write the rules file.
-    os.makedirs("/etc/polkit-1/rules.d", exist_ok=True)
+    os.makedirs("/etc/sudoers.d", exist_ok=True)
     with open(rule_path, "w") as f:
-        f.write(polkit_content)
+        f.write(sudoers_content)
+        
+    os.chmod(rule_path, 0o440)
         
     os.chmod(script_path, 0o755)
 
