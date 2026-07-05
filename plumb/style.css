@@ -49,13 +49,13 @@ button.play-circular {
     min-width: 64px;
     min-height: 64px;
     border-radius: 32px;
-    background-color: #555555; /* Dark grey like the mockup */
-    color: white;
+    background-color: @accent_bg_color;
+    color: @accent_fg_color;
     transition: background-color 0.3s ease, transform 0.1s ease;
 }
 
 button.play-circular:hover {
-    background-color: #666666;
+    background-color: mix(@accent_bg_color, white, 0.1);
 }
 
 button.play-circular:active {
