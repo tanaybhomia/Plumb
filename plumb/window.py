@@ -156,12 +156,14 @@ class PlumbWindow(Adw.ApplicationWindow):
         theme_menu.append("Dark", "win.theme-dark")
         menu.append_submenu("Theme", theme_menu)
 
-        menu.append("Keyboard Shortcuts", "win.show-help-overlay")
+        menu.append("Keyboard Shortcuts", "app.shortcuts")
         menu.append("Preferences", "app.preferences")
         menu.append("About Plumb", "app.about")
 
         self.menu_button.set_menu_model(menu)
         self.header.pack_end(self.menu_button)
+
+        self._build_shortcuts_window()
 
         self.balance_button = Gtk.MenuButton()
         self.balance_button.set_icon_name("open-menu-symbolic")
@@ -223,6 +225,12 @@ class PlumbWindow(Adw.ApplicationWindow):
         except Exception as e:
             pass
 
+        self.connect("close-request", self._on_close_request)
+
+    def _on_close_request(self, window):
+        self._unblock_websites()
+        return False
+
     def _on_screensaver_active_changed(
         self,
         connection,
@@ -242,15 +250,143 @@ class PlumbWindow(Adw.ApplicationWindow):
         if self.view_stack.get_visible_child_name() != pages[index]:
             self.view_stack.set_visible_child_name(pages[index])
 
-    def _on_key_pressed(self, controller, keyval, keycode, state):
-        if keyval == Gdk.KEY_space:
-            current_page = self.view_stack.get_visible_child_name()
+    def _build_shortcuts_window(self):
+        xml = """
+        <interface>
+          <object class="GtkShortcutsWindow" id="shortcuts">
+            <property name="modal">True</property>
+            <child>
+              <object class="GtkShortcutsSection">
+                <property name="section-name">shortcuts</property>
+                <property name="title">General</property>
+                <child>
+                  <object class="GtkShortcutsGroup">
+                    <property name="title">Navigation</property>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Go to Pomodoro</property>
+                        <property name="accelerator">&lt;Alt&gt;1</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Go to Timer</property>
+                        <property name="accelerator">&lt;Alt&gt;2</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Go to Stats</property>
+                        <property name="accelerator">&lt;Alt&gt;3</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkShortcutsGroup">
+                    <property name="title">Application</property>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Preferences</property>
+                        <property name="accelerator">&lt;Primary&gt;comma</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Keyboard Shortcuts</property>
+                        <property name="accelerator">&lt;Primary&gt;question</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Toggle Mini Player</property>
+                        <property name="accelerator">&lt;Primary&gt;m</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Toggle Ironclad Mode</property>
+                        <property name="accelerator">&lt;Primary&gt;&lt;Shift&gt;i</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Quit</property>
+                        <property name="accelerator">&lt;Primary&gt;q</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkShortcutsGroup">
+                    <property name="title">Timer</property>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Play / Pause Timer</property>
+                        <property name="accelerator">space</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Restart Timer</property>
+                        <property name="accelerator">r</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkShortcutsShortcut">
+                        <property name="title">Save / Skip Session</property>
+                        <property name="accelerator">s</property>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </interface>
+        """
+        builder = Gtk.Builder.new_from_string(xml, -1)
+        shortcuts = builder.get_object("shortcuts")
+        self.set_help_overlay(shortcuts)
 
+    def _on_key_pressed(self, controller, keyval, keycode, state):
+        is_alt = (state & Gdk.ModifierType.ALT_MASK) != 0
+        
+        if is_alt:
+            if keyval == Gdk.KEY_1:
+                self.view_stack.set_visible_child_name("pomodoro")
+                return True
+            elif keyval == Gdk.KEY_2:
+                self.view_stack.set_visible_child_name("timer")
+                return True
+            elif keyval == Gdk.KEY_3:
+                self.view_stack.set_visible_child_name("stats")
+                return True
+
+        current_page = self.view_stack.get_visible_child_name()
+
+        if keyval == Gdk.KEY_space:
             if current_page == "pomodoro":
                 self._on_play_pause_clicked(None)
                 return True
             elif current_page == "timer":
                 self._on_sw_play_pause_clicked(None)
+                return True
+                
+        elif keyval in (Gdk.KEY_r, Gdk.KEY_R):
+            if current_page == "pomodoro" and self.restart_btn.get_sensitive() and self.restart_btn.get_visible():
+                self.restart_btn.emit("clicked")
+                return True
+            elif current_page == "timer" and self.sw_restart_btn.get_sensitive() and self.sw_restart_btn.get_visible():
+                self.sw_restart_btn.emit("clicked")
+                return True
+                
+        elif keyval in (Gdk.KEY_s, Gdk.KEY_S):
+            if current_page == "pomodoro" and self.break_btn.get_sensitive() and self.break_btn.get_visible():
+                self.break_btn.emit("clicked")
+                return True
+            elif current_page == "timer" and self.sw_save_btn.get_sensitive() and self.sw_save_btn.get_visible():
+                self.sw_save_btn.emit("clicked")
                 return True
 
         return False

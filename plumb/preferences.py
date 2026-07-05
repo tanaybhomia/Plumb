@@ -562,6 +562,16 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         if not domain:
             return
             
+        domain = domain.lower()
+        if "://" in domain:
+            from urllib.parse import urlparse
+            domain = urlparse(domain).netloc
+        elif "/" in domain:
+            domain = domain.split("/")[0]
+            
+        if domain.startswith("www."):
+            domain = domain[4:]
+            
         w_id = db.add_website(domain)
         if w_id:
             self.new_website_entry.set_text("")

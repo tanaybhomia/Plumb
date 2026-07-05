@@ -40,24 +40,46 @@ class PlumbApplication(Adw.Application):
         toggle_compact_action = Gio.SimpleAction.new("toggle-compact", None)
         toggle_compact_action.connect("activate", self._on_toggle_compact)
         self.add_action(toggle_compact_action)
-        self.set_accels_for_action("app.toggle-compact", ["<Alt>c"])
+        self.set_accels_for_action("app.toggle-compact", ["<Primary>m"])
 
         quit_action = Gio.SimpleAction.new("quit", None)
         quit_action.connect("activate", self._on_quit_action)
         self.add_action(quit_action)
         self.set_accels_for_action("app.quit", ["<Primary>q"])
 
+        about_action = Gio.SimpleAction.new("about", None)
+        about_action.connect("activate", self._on_about_action)
+        self.add_action(about_action)
+
+        toggle_ironclad_action = Gio.SimpleAction.new("toggle-ironclad", None)
+        toggle_ironclad_action.connect("activate", self._on_toggle_ironclad)
+        self.add_action(toggle_ironclad_action)
+        self.set_accels_for_action("app.toggle-ironclad", ["<Primary><Shift>i"])
+
+        shortcuts_action = Gio.SimpleAction.new("shortcuts", None)
+        shortcuts_action.connect("activate", self._on_shortcuts_action)
+        self.add_action(shortcuts_action)
+        self.set_accels_for_action("app.shortcuts", ["<Primary>question"])
+
     def _do_quit(self):
         import sys
 
         win = self.props.active_window
-        if (
-            win
-            and hasattr(win, "timer")
-            and win.timer
-            and getattr(win.timer, "dnd_sync", False)
-        ):
-            win.timer._set_gnome_dnd(False)
+        if not win:
+            windows = self.get_windows()
+            if windows:
+                win = windows[0]
+
+        if win:
+            if hasattr(win, "main_window"):
+                win = win.main_window
+                
+            if hasattr(win, "timer") and win.timer and getattr(win.timer, "dnd_sync", False):
+                win.timer._set_gnome_dnd(False)
+                
+            if hasattr(win, "_unblock_websites"):
+                win._unblock_websites()
+                
         self.quit()
         sys.exit(0)
 
@@ -150,6 +172,38 @@ class PlumbApplication(Adw.Application):
         win = self.props.active_window
         prefs_win = PlumbPreferencesWindow(timer=win.timer, transient_for=win)
         prefs_win.present()
+
+    def _on_about_action(self, action, param):
+        about = Adw.AboutWindow(
+            application_name="Plumb",
+            application_icon="com.github.tanay.Plumb",
+            developer_name="Tanay",
+            version="1.0.0",
+            website="https://github.com/tanay/Plumb",
+            issue_url="https://github.com/tanay/Plumb/issues",
+            copyright="© 2026 Tanay Bhomia",
+            license_type=Gtk.License.GPL_3_0,
+            transient_for=self.props.active_window,
+        )
+        about.add_credit_section("Code by", ["Tanay Bhomia"])
+        about.add_credit_section("Icon by", ["[Icon Designer Name]"])
+        about.present()
+
+    def _on_toggle_ironclad(self, action, param):
+        win = self.props.active_window
+        if win:
+            main_win = getattr(win, "main_window", win)
+            if hasattr(main_win, "btn_ironclad"):
+                main_win.btn_ironclad.set_active(not main_win.btn_ironclad.get_active())
+
+    def _on_shortcuts_action(self, action, param):
+        win = self.props.active_window
+        if win:
+            main_win = getattr(win, "main_window", win)
+            if hasattr(main_win, "get_help_overlay"):
+                overlay = main_win.get_help_overlay()
+                if overlay:
+                    overlay.present()
 
     def do_activate(self):
         # Load CSS
