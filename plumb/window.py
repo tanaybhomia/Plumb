@@ -730,13 +730,13 @@ class PlumbWindow(Adw.ApplicationWindow):
             self.progress_bar.set_fraction(0.0)
 
     def _on_compact_clicked(self, button):
-        self.set_visible(False)
         if not hasattr(self, 'compact_window'):
             from plumb.compact import CompactWindow
             self.compact_window = CompactWindow(self.get_application(), self)
             
         self.compact_window.present()
         self.compact_window.update_display()
+        self.set_visible(False)
 
     def _on_ironclad_toggled(self, button):
         self.is_ironclad = button.get_active()

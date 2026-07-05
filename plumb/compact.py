@@ -19,6 +19,8 @@ class CompactWindow(Gtk.ApplicationWindow):
         window_handle = Gtk.WindowHandle()
         self.set_child(window_handle)
 
+        self.connect("close-request", self._on_close_request)
+
         main_box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
         window_handle.set_child(main_box)
 
@@ -203,3 +205,9 @@ class CompactWindow(Gtk.ApplicationWindow):
     def _on_restore_clicked(self, button):
         self.set_visible(False)
         self.main_window.present()
+
+    def _on_close_request(self, *args):
+        app = self.get_application()
+        if app:
+            app._attempt_quit(self.main_window)
+        return True

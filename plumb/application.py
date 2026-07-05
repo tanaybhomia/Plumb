@@ -95,7 +95,8 @@ class PlumbApplication(Adw.Application):
             dialog = Adw.MessageDialog(
                 heading="Active Session in Progress",
             )
-            dialog.set_transient_for(win)
+            active_win = self.props.active_window
+            dialog.set_transient_for(active_win if active_win else win)
             
             dialog.add_response("cancel", "Cancel")
             
