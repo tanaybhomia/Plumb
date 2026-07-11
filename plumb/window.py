@@ -81,7 +81,8 @@ class PlumbWindow(Adw.ApplicationWindow):
         super().__init__(**kwargs)
         self.set_title("Plumb")
         self.set_default_size(400, 500)
-        self.set_resizable(False)
+        self.set_size_request(400, 500)
+        self.set_resizable(True)
 
         self.timer = TimerLogic()
         self.timer.on_tick_callback = self._on_timer_tick
@@ -108,13 +109,18 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.btn_compact.connect("clicked", self._on_compact_clicked)
         self.header.pack_start(self.btn_compact)
         
-        self.is_ironclad = db.get_setting("ironclad_mode", "False") == "True"
-        self.btn_ironclad = Gtk.ToggleButton(icon_name="security-high-symbolic")
-        self.btn_ironclad.set_active(self.is_ironclad)
-        self.btn_ironclad.set_tooltip_text("Ironclad Mode")
-        self.btn_ironclad.connect("toggled", self._on_ironclad_toggled)
-        self.header.pack_start(self.btn_ironclad)
-        self._update_ironclad_theme()
+        self.is_submerged = db.get_setting("submerge_mode", "False") == "True"
+        self.btn_submerge = Gtk.ToggleButton(icon_name="submerge-symbolic")
+        self.btn_submerge.set_active(self.is_submerged)
+        self.btn_submerge.set_tooltip_text("Submerge Mode")
+        self.btn_submerge.set_can_focus(False)
+        self.btn_submerge.set_can_focus(False)
+        self.btn_submerge.connect("toggled", self._on_submerge_toggled)
+        self.header.pack_start(self.btn_submerge)
+        self._update_submerge_theme()
+        style_manager = Adw.StyleManager.get_default()
+        style_manager.connect("notify::dark", self._on_dark_changed)
+        self._on_dark_changed(style_manager, None)
 
         self.carousel = Adw.Carousel()
         self.carousel.set_spacing(24)
@@ -151,9 +157,9 @@ class PlumbWindow(Adw.ApplicationWindow):
         menu = Gio.Menu()
 
         theme_menu = Gio.Menu()
-        theme_menu.append("System Default", "win.theme-system")
-        theme_menu.append("Light", "win.theme-light")
-        theme_menu.append("Dark", "win.theme-dark")
+        theme_menu.append("System Default", "app.theme-system")
+        theme_menu.append("Light", "app.theme-light")
+        theme_menu.append("Dark", "app.theme-dark")
         menu.append_submenu("Theme", theme_menu)
 
         menu.append("Keyboard Shortcuts", "app.shortcuts")
@@ -177,7 +183,8 @@ class PlumbWindow(Adw.ApplicationWindow):
 
         self.pomodoro_page = self._build_pomodoro_page()
         self.timer_page = self._build_timer_page()
-        self.stats_page = Gtk.Label(label="Stats coming soon...")
+        from plumb.stats import StatsPage
+        self.stats_page = StatsPage(main_window=self)
 
         self.carousel.append(self.pomodoro_page)
         self.carousel.append(self.timer_page)
@@ -187,17 +194,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         self._set_running_ui_state(False)
         self.add_css_class("focus-window")
 
-        theme_sys_action = Gio.SimpleAction.new("theme-system", None)
-        theme_sys_action.connect("activate", self._on_theme_system)
-        self.add_action(theme_sys_action)
 
-        theme_light_action = Gio.SimpleAction.new("theme-light", None)
-        theme_light_action.connect("activate", self._on_theme_light)
-        self.add_action(theme_light_action)
-
-        theme_dark_action = Gio.SimpleAction.new("theme-dark", None)
-        theme_dark_action.connect("activate", self._on_theme_dark)
-        self.add_action(theme_dark_action)
 
         saved_theme = db.get_setting("theme", "system")
         style_mgr = Adw.StyleManager.get_default()
@@ -305,7 +302,7 @@ class PlumbWindow(Adw.ApplicationWindow):
                     </child>
                     <child>
                       <object class="GtkShortcutsShortcut">
-                        <property name="title">Toggle Ironclad Mode</property>
+                        <property name="title">Toggle Submerge Mode</property>
                         <property name="accelerator">&lt;Primary&gt;&lt;Shift&gt;i</property>
                       </object>
                     </child>
@@ -391,17 +388,7 @@ class PlumbWindow(Adw.ApplicationWindow):
 
         return False
 
-    def _on_theme_system(self, action, param):
-        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.DEFAULT)
-        db.set_setting("theme", "system")
 
-    def _on_theme_light(self, action, param):
-        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_LIGHT)
-        db.set_setting("theme", "light")
-
-    def _on_theme_dark(self, action, param):
-        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_DARK)
-        db.set_setting("theme", "dark")
 
     def _on_view_stack_changed(self, stack, param):
         pages = ["pomodoro", "timer", "stats"]
@@ -562,14 +549,14 @@ class PlumbWindow(Adw.ApplicationWindow):
             self.project_dropdown.add_css_class("pill")
 
         if is_running:
-            self.btn_ironclad.set_sensitive(False)
+            self.btn_submerge.set_sensitive(False)
             master_enabled = db.get_setting("web_blocker_enabled", "False") == "True"
             normal_enabled = db.get_setting("web_blocker_normal_mode", "False") == "True"
             
-            if self.timer.state == "Focus" and master_enabled and (self.is_ironclad or normal_enabled):
+            if self.timer.state == "Focus" and master_enabled and (self.is_submerged or normal_enabled):
                 self._block_websites()
 
-            if self.is_ironclad and self.timer.state == "Focus":
+            if self.is_submerged and self.timer.state == "Focus":
                 self.play_pause_btn.set_icon_name("security-high-symbolic")
                 self.play_pause_btn.set_sensitive(False)
                 
@@ -593,7 +580,7 @@ class PlumbWindow(Adw.ApplicationWindow):
                 self._show_overlays()
         else:
             if not getattr(self, "stopwatch", None) or not self.stopwatch.is_running:
-                self.btn_ironclad.set_sensitive(True)
+                self.btn_submerge.set_sensitive(True)
                 
             self._unblock_websites()
             self.play_pause_btn.set_icon_name("media-playback-start-symbolic")
@@ -612,7 +599,7 @@ class PlumbWindow(Adw.ApplicationWindow):
             return
 
         if self.timer.is_running:
-            if self.is_ironclad and self.timer.state == "Focus":
+            if self.is_submerged and self.timer.state == "Focus":
                 return
             self.timer.pause()
             self._set_running_ui_state(False)
@@ -666,10 +653,10 @@ class PlumbWindow(Adw.ApplicationWindow):
             print(f"Exception unblocking: {e}")
 
     def _on_break_clicked(self, button):
-        if self.timer.state == "Focus" and self.is_ironclad and self.timer.is_running:
+        if self.timer.state == "Focus" and self.is_submerged and self.timer.is_running:
             dialog = Adw.MessageDialog(
                 heading="Give Up?",
-                body="You are in Ironclad Mode. Giving up will discard this session entirely.",
+                body="You are in Submerge Mode. Giving up will discard this session entirely.",
             )
             dialog.set_transient_for(self)
             dialog.add_response("cancel", "Keep Focusing")
@@ -738,21 +725,33 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.compact_window.update_display()
         self.set_visible(False)
 
-    def _on_ironclad_toggled(self, button):
-        self.is_ironclad = button.get_active()
-        db.set_setting("ironclad_mode", str(self.is_ironclad))
-        self._update_ironclad_theme()
-        self._set_running_ui_state(self.timer.is_running)
+    def _on_submerge_toggled(self, button):
+        self.is_submerged = button.get_active()
+        db.set_setting("submerge_mode", str(self.is_submerged))
+        self._update_submerge_theme()
+        style_manager = Adw.StyleManager.get_default()
+        style_manager.connect("notify::dark", self._on_dark_changed)
+        self._on_dark_changed(style_manager, None)
 
-    def _update_ironclad_theme(self):
-        if self.is_ironclad:
-            self.add_css_class("ironclad-theme")
-            if hasattr(self, "compact_window") and self.compact_window:
-                self.compact_window.add_css_class("ironclad-theme")
+    def _update_submerge_theme(self):
+        if self.is_submerged:
+            self.add_css_class("submerge-theme")
+            if hasattr(self, 'compact_window'):
+                self.compact_window.add_css_class("submerge-theme")
         else:
-            self.remove_css_class("ironclad-theme")
+            self.remove_css_class("submerge-theme")
+            if hasattr(self, 'compact_window'):
+                self.compact_window.remove_css_class("submerge-theme")
+
+    def _on_dark_changed(self, style_manager, param):
+        if style_manager.get_dark():
+            self.add_css_class("dark-theme")
             if hasattr(self, "compact_window") and self.compact_window:
-                self.compact_window.remove_css_class("ironclad-theme")
+                self.compact_window.add_css_class("dark-theme")
+        else:
+            self.remove_css_class("dark-theme")
+            if hasattr(self, "compact_window") and self.compact_window:
+                self.compact_window.remove_css_class("dark-theme")
 
     def _on_timer_tick(self, time_left):
         self._update_time_display()
@@ -878,14 +877,14 @@ class PlumbWindow(Adw.ApplicationWindow):
             self.sw_project_dropdown.add_css_class("pill")
 
         if is_running:
-            self.btn_ironclad.set_sensitive(False)
+            self.btn_submerge.set_sensitive(False)
             master_enabled = db.get_setting("web_blocker_enabled", "False") == "True"
             normal_enabled = db.get_setting("web_blocker_normal_mode", "False") == "True"
             
-            if master_enabled and (self.is_ironclad or normal_enabled):
+            if master_enabled and (self.is_submerged or normal_enabled):
                 self._block_websites()
 
-            if self.is_ironclad:
+            if self.is_submerged:
                 self.sw_play_pause_btn.set_icon_name("security-high-symbolic")
                 self.sw_play_pause_btn.set_sensitive(False)
                 
@@ -906,7 +905,7 @@ class PlumbWindow(Adw.ApplicationWindow):
                 self.sw_save_btn.set_sensitive(False)
         else:
             if not getattr(self, "timer", None) or not self.timer.is_running:
-                self.btn_ironclad.set_sensitive(True)
+                self.btn_submerge.set_sensitive(True)
                 
             self.sw_play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.sw_play_pause_btn.set_sensitive(True)
@@ -932,10 +931,10 @@ class PlumbWindow(Adw.ApplicationWindow):
             self._set_sw_running_ui_state(True)
 
     def _on_sw_restart_clicked(self, button):
-        if self.is_ironclad and self.stopwatch.is_running:
+        if self.is_submerged and self.stopwatch.is_running:
             dialog = Adw.MessageDialog(
                 heading="Give Up?",
-                body="You are in Ironclad Mode. Giving up will discard this tracked time entirely.",
+                body="You are in Submerge Mode. Giving up will discard this tracked time entirely.",
             )
             dialog.set_transient_for(self)
             dialog.add_response("cancel", "Keep Working")
@@ -983,7 +982,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         s = secs % 60
         self.sw_time_label.set_label(f"{m:02d}:{s:02d}")
         
-        if self.is_ironclad and self.stopwatch.is_running:
+        if self.is_submerged and self.stopwatch.is_running:
             min_save_time = int(db.get_setting("sw_min_save_time", "25")) * 60
             self.sw_save_btn.set_sensitive(secs >= min_save_time)
         

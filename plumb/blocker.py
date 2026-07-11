@@ -3,8 +3,8 @@ import sys
 import os
 
 HOSTS_FILE = "/etc/hosts"
-BLOCK_MARKER_START = "# --- PLUMB IRONCLAD BLOCKER START ---"
-BLOCK_MARKER_END = "# --- PLUMB IRONCLAD BLOCKER END ---"
+BLOCK_MARKER_START = "# --- PLUMB SUBMERGE BLOCKER START ---"
+BLOCK_MARKER_END = "# --- PLUMB SUBMERGE BLOCKER END ---"
 
 def get_hosts_content():
     try:

@@ -1,3 +1,23 @@
+
+/* Global Disable Transitions */
+window.no-transition, window.no-transition * {
+    transition: none !important;
+}
+
+
+/* Base Submerge Transitions */
+window.submerge-theme:not(.no-transition),
+window.submerge-theme:not(.no-transition) label,
+window.submerge-theme:not(.no-transition) image,
+window.submerge-theme:not(.no-transition) popover > contents,
+.submerge-theme:not(.no-transition) .focus-state > trough > progress,
+.submerge-theme:not(.no-transition) progressbar > trough,
+.submerge-theme:not(.no-transition) .compact-progress > trough,
+.submerge-theme:not(.no-transition) button,
+.submerge-theme:not(.no-transition) dropdown > button {
+    transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
 /* Custom Tapas Styling */
 
 /* Window background transition */
@@ -122,66 +142,36 @@ button.compact-btn {
     border-radius: 16px;
 }
 
-/* Ironclad Theme */
-.ironclad-theme .focus-state > trough > progress {
-    background-color: #E64A19; /* Heated Iron Orange */
-}
 
-.ironclad-theme progressbar > trough,
-.ironclad-theme .compact-progress > trough {
-    background-color: rgba(230, 74, 25, 0.15);
-}
 
-.ironclad-theme button.action-pill,
-.ironclad-theme dropdown > button {
-    background-color: rgba(230, 74, 25, 0.15);
-    color: white;
-}
+/* Submerge Theme - Dark Mode (Mariana Trench) */
+window.dark-theme.submerge-theme .focus-state > trough > progress { background-color: #00e5ff; }
+window.dark-theme.submerge-theme progressbar > trough, window.dark-theme.submerge-theme .compact-progress > trough { background-color: rgba(0, 229, 255, 0.15); }
+window.dark-theme.submerge-theme button.action-pill, window.dark-theme.submerge-theme dropdown > button { background-color: rgba(0, 229, 255, 0.15); color: white; }
+window.dark-theme.submerge-theme button.action-pill:hover, window.dark-theme.submerge-theme dropdown > button:hover { background-color: rgba(0, 229, 255, 0.25); }
+window.dark-theme.submerge-theme button.play-circular { background-color: rgba(0, 229, 255, 0.20); }
+window.dark-theme.submerge-theme button.play-circular:hover { background-color: rgba(0, 229, 255, 0.30); }
+window.dark-theme.submerge-theme button.compact-btn:hover { background-color: rgba(0, 229, 255, 0.30); }
 
-.ironclad-theme button.action-pill:hover,
-.ironclad-theme dropdown > button:hover {
-    background-color: rgba(230, 74, 25, 0.25);
-}
+window.dark-theme.submerge-theme { background-color: #041221; color: white; }
+window.dark-theme.submerge-theme label, window.dark-theme.submerge-theme image, window.dark-theme.submerge-theme .title-1, window.dark-theme.submerge-theme .title-4, window.dark-theme.submerge-theme .cycle-indicator { color: white; }
+window.dark-theme.submerge-theme popover > contents { background-color: #08213e; color: white; }
+window.dark-theme.submerge-theme popover > contents label { color: white; }
+window.dark-theme.submerge-theme popover > contents listview row:selected, window.dark-theme.submerge-theme popover > contents listview row:hover { background-color: rgba(0, 229, 255, 0.15); }
+window.dark-theme.submerge-theme.compact-window { background-color: #020a12; }
 
-.ironclad-theme button.play-circular {
-    background-color: rgba(230, 74, 25, 0.20);
-}
+/* Submerge Theme - Light Mode (Marine Surface) */
+window:not(.dark-theme).submerge-theme .focus-state > trough > progress { background-color: #0277bd; }
+window:not(.dark-theme).submerge-theme progressbar > trough, window:not(.dark-theme).submerge-theme .compact-progress > trough { background-color: rgba(2, 119, 189, 0.15); }
+window:not(.dark-theme).submerge-theme button.action-pill, window:not(.dark-theme).submerge-theme dropdown > button { background-color: rgba(2, 119, 189, 0.15); color: #023759; }
+window:not(.dark-theme).submerge-theme button.action-pill:hover, window:not(.dark-theme).submerge-theme dropdown > button:hover { background-color: rgba(2, 119, 189, 0.25); }
+window:not(.dark-theme).submerge-theme button.play-circular { background-color: rgba(2, 119, 189, 0.20); }
+window:not(.dark-theme).submerge-theme button.play-circular:hover { background-color: rgba(2, 119, 189, 0.30); }
+window:not(.dark-theme).submerge-theme button.compact-btn:hover { background-color: rgba(2, 119, 189, 0.30); }
 
-.ironclad-theme button.play-circular:hover {
-    background-color: rgba(230, 74, 25, 0.30);
-}
-
-.ironclad-theme button.compact-btn:hover {
-    background-color: rgba(230, 74, 25, 0.30);
-}
-
-window.ironclad-theme {
-    background-color: #1a1a1c;
-    color: white;
-}
-
-window.ironclad-theme label,
-window.ironclad-theme image,
-window.ironclad-theme .title-1,
-window.ironclad-theme .title-4,
-window.ironclad-theme .cycle-indicator {
-    color: white;
-}
-
-window.ironclad-theme popover > contents {
-    background-color: #1e1b1a;
-    color: white;
-}
-
-window.ironclad-theme popover > contents label {
-    color: white;
-}
-
-window.ironclad-theme popover > contents listview row:selected,
-window.ironclad-theme popover > contents listview row:hover {
-    background-color: rgba(230, 74, 25, 0.15);
-}
-
-window.ironclad-theme.compact-window {
-    background-color: #121213;
-}
+window:not(.dark-theme).submerge-theme { background-color: #e3f2fd; color: #023759; }
+window:not(.dark-theme).submerge-theme label, window:not(.dark-theme).submerge-theme image, window:not(.dark-theme).submerge-theme .title-1, window:not(.dark-theme).submerge-theme .title-4, window:not(.dark-theme).submerge-theme .cycle-indicator { color: #023759; }
+window:not(.dark-theme).submerge-theme popover > contents { background-color: #ffffff; color: #023759; }
+window:not(.dark-theme).submerge-theme popover > contents label { color: #023759; }
+window:not(.dark-theme).submerge-theme popover > contents listview row:selected, window:not(.dark-theme).submerge-theme popover > contents listview row:hover { background-color: rgba(2, 119, 189, 0.15); }
+window:not(.dark-theme).submerge-theme.compact-window { background-color: #cce4f7; }

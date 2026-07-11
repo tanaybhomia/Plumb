@@ -51,15 +51,84 @@ class PlumbApplication(Adw.Application):
         about_action.connect("activate", self._on_about_action)
         self.add_action(about_action)
 
-        toggle_ironclad_action = Gio.SimpleAction.new("toggle-ironclad", None)
-        toggle_ironclad_action.connect("activate", self._on_toggle_ironclad)
+        toggle_ironclad_action = Gio.SimpleAction.new("toggle-submerge", None)
+        toggle_ironclad_action.connect("activate", self._on_toggle_submerge)
         self.add_action(toggle_ironclad_action)
-        self.set_accels_for_action("app.toggle-ironclad", ["<Primary><Shift>i"])
+        self.set_accels_for_action("app.toggle-submerge", ["<Primary><Shift>i"])
 
         shortcuts_action = Gio.SimpleAction.new("shortcuts", None)
         shortcuts_action.connect("activate", self._on_shortcuts_action)
         self.add_action(shortcuts_action)
         self.set_accels_for_action("app.shortcuts", ["<Primary>question"])
+
+        theme_sys_action = Gio.SimpleAction.new("theme-system", None)
+        theme_sys_action.connect("activate", self._on_theme_system)
+        self.add_action(theme_sys_action)
+
+        theme_light_action = Gio.SimpleAction.new("theme-light", None)
+        theme_light_action.connect("activate", self._on_theme_light)
+        self.add_action(theme_light_action)
+
+        theme_dark_action = Gio.SimpleAction.new("theme-dark", None)
+        theme_dark_action.connect("activate", self._on_theme_dark)
+        self.add_action(theme_dark_action)
+
+    def _on_theme_system(self, action, param):
+        from gi.repository import Adw, GLib
+        from plumb.database import db
+        win = self.props.active_window
+        if win:
+            win.add_css_class("no-transition")
+            if hasattr(win, "compact_window") and win.compact_window:
+                win.compact_window.add_css_class("no-transition")
+                
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.DEFAULT)
+        db.set_setting("theme", "system")
+        
+        if win:
+            def remove_no_transition():
+                win.remove_css_class("no-transition")
+                if hasattr(win, "compact_window") and win.compact_window:
+                    win.compact_window.remove_css_class("no-transition")
+            GLib.timeout_add(500, remove_no_transition)
+
+    def _on_theme_light(self, action, param):
+        from gi.repository import Adw, GLib
+        from plumb.database import db
+        win = self.props.active_window
+        if win:
+            win.add_css_class("no-transition")
+            if hasattr(win, "compact_window") and win.compact_window:
+                win.compact_window.add_css_class("no-transition")
+                
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_LIGHT)
+        db.set_setting("theme", "light")
+        
+        if win:
+            def remove_no_transition():
+                win.remove_css_class("no-transition")
+                if hasattr(win, "compact_window") and win.compact_window:
+                    win.compact_window.remove_css_class("no-transition")
+            GLib.timeout_add(500, remove_no_transition)
+
+    def _on_theme_dark(self, action, param):
+        from gi.repository import Adw, GLib
+        from plumb.database import db
+        win = self.props.active_window
+        if win:
+            win.add_css_class("no-transition")
+            if hasattr(win, "compact_window") and win.compact_window:
+                win.compact_window.add_css_class("no-transition")
+                
+        Adw.StyleManager.get_default().set_color_scheme(Adw.ColorScheme.FORCE_DARK)
+        db.set_setting("theme", "dark")
+        
+        if win:
+            def remove_no_transition():
+                win.remove_css_class("no-transition")
+                if hasattr(win, "compact_window") and win.compact_window:
+                    win.compact_window.remove_css_class("no-transition")
+            GLib.timeout_add(500, remove_no_transition)
 
     def _do_quit(self):
         import sys
@@ -81,7 +150,8 @@ class PlumbApplication(Adw.Application):
                 win._unblock_websites()
                 
         self.quit()
-        sys.exit(0)
+        import os
+        os._exit(0)
 
     def _attempt_quit(self, win):
         if not win or not hasattr(win, "timer"):
@@ -190,12 +260,12 @@ class PlumbApplication(Adw.Application):
         about.add_credit_section("Icon by", ["[Icon Designer Name]"])
         about.present()
 
-    def _on_toggle_ironclad(self, action, param):
+    def _on_toggle_submerge(self, action, param):
         win = self.props.active_window
         if win:
             main_win = getattr(win, "main_window", win)
-            if hasattr(main_win, "btn_ironclad"):
-                main_win.btn_ironclad.set_active(not main_win.btn_ironclad.get_active())
+            if hasattr(main_win, "btn_submerge"):
+                main_win.btn_submerge.set_active(not main_win.btn_submerge.get_active())
 
     def _on_shortcuts_action(self, action, param):
         win = self.props.active_window
@@ -226,6 +296,11 @@ class PlumbApplication(Adw.Application):
 
         win = self.props.active_window
         if not win:
+            windows = self.get_windows()
+            if windows:
+                win = windows[0]
+
+        if not win:
             win = PlumbWindow(application=self)
 
             def _on_window_close(*args):
@@ -233,6 +308,14 @@ class PlumbApplication(Adw.Application):
                 return True
 
             win.connect("close-request", _on_window_close)
+            
+            # Failsafe: Ensure websites are unblocked on startup in case of a crash/shutdown
+            if hasattr(win, "_unblock_websites"):
+                import threading
+                def unblock_failsafe():
+                    win._is_blocked = True
+                    win._unblock_websites()
+                threading.Thread(target=unblock_failsafe, daemon=True).start()
             
         if hasattr(win, "main_window"):
             win = win.main_window

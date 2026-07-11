@@ -487,7 +487,7 @@ class PlumbPreferencesWindow(Adw.PreferencesWindow):
         
         self.block_normal_row = Adw.ActionRow(
             title="Block in Normal Mode",
-            subtitle="Block websites even when Ironclad mode is disabled."
+            subtitle="Block websites even when Submerge mode is disabled."
         )
         self.block_normal_switch = Gtk.Switch(valign=Gtk.Align.CENTER)
         
