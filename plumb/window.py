@@ -98,8 +98,7 @@ class PlumbWindow(Adw.ApplicationWindow):
 
         self.toolbar_view = Adw.ToolbarView()
         self.toast_overlay = Adw.ToastOverlay()
-        self.toast_overlay.set_child(self.toolbar_view)
-        self.set_content(self.toast_overlay)
+        self.set_content(self.toolbar_view)
 
         self.header = Adw.HeaderBar()
         self.toolbar_view.add_top_bar(self.header)
@@ -125,7 +124,8 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.carousel = Adw.Carousel()
         self.carousel.set_spacing(24)
         self.carousel.set_interactive(True)
-        self.toolbar_view.set_content(self.carousel)
+        self.toast_overlay.set_child(self.carousel)
+        self.toolbar_view.set_content(self.toast_overlay)
 
         self.key_ctrl = Gtk.EventControllerKey.new()
         self.key_ctrl.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
@@ -734,6 +734,12 @@ class PlumbWindow(Adw.ApplicationWindow):
     def _on_submerge_toggled(self, button):
         self.is_submerged = button.get_active()
         db.set_setting("submerge_mode", str(self.is_submerged))
+        
+        if self.is_submerged:
+            self._show_toast("Submerged into deep focus")
+        else:
+            self._show_toast("Surfaced from Submerge Mode")
+            
         self._update_submerge_theme()
         style_manager = Adw.StyleManager.get_default()
         style_manager.connect("notify::dark", self._on_dark_changed)
