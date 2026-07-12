@@ -1,0 +1,23 @@
+<svg xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:ns0="http://www.w3.org/2000/svg" xmlns:ns1="https://www.gtk.org/grappa" xmlns:ns3="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" ns1:version="1" ns1:state="outline" ns1:state-names="outline empty" viewBox="0 0 16 16" preserveAspectRatio="xMidYMid meet" gpa:state="outline" ns0:state="outline" xmlns="http://www.w3.org/2000/svg">
+  <title>anchor</title><defs id="defs1" fill="url(&quot;#gpa:foreground&quot;) rgb(0,0,0)" stroke="none" class="foreground foreground-fill foreground-fill" ns1:states="none" ns1:animation-repeat="0" ns1:animation-segment="0">
+    </defs>
+  <path id="anchor" fill="none" stroke="url(&quot;#gpa:foreground&quot;) rgb(0,0,0)" stroke-opacity="1" stroke-width="1.100" stroke-linecap="round" stroke-linejoin="miter" stroke-miterlimit="4" stroke-dashoffset="22.5589" d="M 3 8 L 1 8 C 1.00000012 10.4798479, 2.33418441 12.8301334, 4.49999475 14.0700569 C 6.66580534 15.3099813, 9.33419418 15.3099813, 11.5000048 14.0700569 C 13.6658154 12.8301334, 15 10.4798479, 15 8 L 13 8 M 8 4.99999475 L 8 15 M 10 2.99999738 C 10 4.10456514, 9.10457039 4.99999475, 8.00000286 4.99999475 C 6.89543486 4.99999475, 6.00000525 4.10456562, 6.00000525 2.99999738 C 6.00000525 1.89542925, 6.89543486 0.999999821, 8.00000286 0.999999881 C 9.10457039 1.00000012, 10 1.89542937, 10 2.99999738 Z" class="transparent-fill foreground-stroke foreground-stroke transparent-fill" ns1:states="outline" ns1:stroke-minwidth="25%" ns1:stroke-maxwidth="150%" data-stroke-mid="2.0" data-stroke-min="0.5" data-stroke-max="3.0">
+    </path>
+  <metadata>
+    <rdf:rdf>
+      <work>
+        <license rdf:resource="https://creativecommons.org/publicdomain/zero/1.0/"/>
+        <dc:subject>
+          <rdf:bag>
+            <rdf:li>anchor link</rdf:li>
+          </rdf:bag>
+        </dc:subject>
+        <dc:creator>
+          <agent>
+            <dc:title>Jakub Steiner</dc:title>
+          </agent>
+        </dc:creator>
+      </work>
+    </rdf:rdf>
+  </metadata>
+</svg>

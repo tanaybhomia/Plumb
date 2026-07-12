@@ -12,8 +12,8 @@ class CompactWindow(Gtk.ApplicationWindow):
         self.set_decorated(False)
         self.set_resizable(False)
         self.add_css_class("compact-window")
-        if self.main_window.is_ironclad:
-            self.add_css_class("ironclad-theme")
+        if self.main_window.is_submerged:
+            self.add_css_class("submerge-theme")
 
         # Main layout
         window_handle = Gtk.WindowHandle()

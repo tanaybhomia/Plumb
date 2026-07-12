@@ -80,9 +80,9 @@ class PlumbWindow(Adw.ApplicationWindow):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.set_title("Plumb")
-        self.set_default_size(400, 500)
-        self.set_size_request(400, 500)
-        self.set_resizable(True)
+        self.set_default_size(340, 640)
+        self.set_size_request(340, 640)
+        self.set_resizable(False)
 
         self.timer = TimerLogic()
         self.timer.on_tick_callback = self._on_timer_tick
@@ -110,7 +110,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.header.pack_start(self.btn_compact)
         
         self.is_submerged = db.get_setting("submerge_mode", "False") == "True"
-        self.btn_submerge = Gtk.ToggleButton(icon_name="submerge-symbolic")
+        self.btn_submerge = Gtk.ToggleButton(icon_name="anchor-symbolic")
         self.btn_submerge.set_active(self.is_submerged)
         self.btn_submerge.set_tooltip_text("Submerge Mode")
         self.btn_submerge.set_can_focus(False)
@@ -226,6 +226,9 @@ class PlumbWindow(Adw.ApplicationWindow):
 
     def _on_close_request(self, window):
         self._unblock_websites()
+        if hasattr(self, 'compact_window') and self.compact_window:
+            self.compact_window.destroy()
+        self._hide_overlays()
         return False
 
     def _on_screensaver_active_changed(
@@ -557,7 +560,7 @@ class PlumbWindow(Adw.ApplicationWindow):
                 self._block_websites()
 
             if self.is_submerged and self.timer.state == "Focus":
-                self.play_pause_btn.set_icon_name("security-high-symbolic")
+                self.play_pause_btn.set_icon_name("anchor-symbolic")
                 self.play_pause_btn.set_sensitive(False)
                 
                 self.break_btn.set_label("Give Up")
@@ -583,7 +586,10 @@ class PlumbWindow(Adw.ApplicationWindow):
                 self.btn_submerge.set_sensitive(True)
                 
             self._unblock_websites()
-            self.play_pause_btn.set_icon_name("media-playback-start-symbolic")
+            if self.is_submerged:
+                self.play_pause_btn.set_icon_name("anchor-symbolic")
+            else:
+                self.play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.play_pause_btn.set_sensitive(True)
             
             total_time = self.timer.durations[self.timer.state] * 60
@@ -885,7 +891,7 @@ class PlumbWindow(Adw.ApplicationWindow):
                 self._block_websites()
 
             if self.is_submerged:
-                self.sw_play_pause_btn.set_icon_name("security-high-symbolic")
+                self.sw_play_pause_btn.set_icon_name("anchor-symbolic")
                 self.sw_play_pause_btn.set_sensitive(False)
                 
                 self.sw_restart_btn.set_label("Give Up")
@@ -907,7 +913,10 @@ class PlumbWindow(Adw.ApplicationWindow):
             if not getattr(self, "timer", None) or not self.timer.is_running:
                 self.btn_submerge.set_sensitive(True)
                 
-            self.sw_play_pause_btn.set_icon_name("media-playback-start-symbolic")
+            if self.is_submerged:
+                self.sw_play_pause_btn.set_icon_name("anchor-symbolic")
+            else:
+                self.sw_play_pause_btn.set_icon_name("media-playback-start-symbolic")
             self.sw_play_pause_btn.set_sensitive(True)
             
             self.sw_restart_btn.set_label("Restart")

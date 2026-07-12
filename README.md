@@ -29,14 +29,14 @@ Plumb is a focused productivity application built natively for the GNOME desktop
 
 ## Why Plumb?
 
-Most pomodoro timers are just simple countdowns. Plumb is designed with the "Ironclad" productivity philosophy in mind, stopping you from cheating yourself out of focus time.
-- **Ironclad Discipline**: The ultimate "commit or quit" setting. When activated, you cannot pause or skip a session. You must either finish the 25 minutes or hit "Give Up" to discard the entire session completely.
+Most pomodoro timers are just simple countdowns. Plumb is designed with the "Submerge" productivity philosophy in mind, stopping you from cheating yourself out of focus time.
+- **Submerge Discipline**: The ultimate "commit or quit" setting. When activated, you cannot pause or skip a session. You must either finish the 25 minutes or hit "Give Up" to discard the entire session completely.
 - **Seamless Distraction Blocking**: Plumb can automatically restrict access to distracting websites the second a Pomodoro starts, and instantly unblock them when you take a break.
 - **Deep GNOME Integration**: Plumb feels at home on Linux. It automatically puts your desktop in Do Not Disturb mode when focusing and creates full-screen Break Overlays to physically force you away from the screen when it's time to rest.
 
 ## Core Features
 
-- **Ironclad Mode**: A strict, custom crimson-themed mode where skipping and pausing are disabled, ensuring uninterrupted focus.
+- **Submerge Mode**: A strict, custom deep-sea themed mode where skipping and pausing are disabled, ensuring uninterrupted focus.
 - **Native Web Blocker**: Block distracting websites (like Reddit or Twitter) system-wide automatically during focus sessions, powered by a seamless, one-time setup Polkit integration.
 - **Break Overlays**: When a break starts, a fullscreen overlay forces you to stop working. It flawlessly supports multi-monitor setups and displays motivational quotes.
 - **Compact Mini-Player**: Minimize the window into a sleek, floating mini-player that dynamically adapts to your Light/Dark system theme while you work.
