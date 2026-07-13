@@ -131,70 +131,76 @@ class PlumbApplication(Adw.Application):
             GLib.timeout_add(500, remove_no_transition)
 
     def _do_quit(self):
-        import sys
+        try:
+            win = self.props.active_window
+            if not win:
+                windows = self.get_windows()
+                if windows:
+                    win = windows[0]
 
-        win = self.props.active_window
-        if not win:
-            windows = self.get_windows()
-            if windows:
-                win = windows[0]
-
-        if win:
-            if hasattr(win, "main_window"):
-                win = win.main_window
-                
-            if hasattr(win, "timer") and win.timer and getattr(win.timer, "dnd_sync", False):
-                win.timer._set_gnome_dnd(False)
-                
-            if hasattr(win, "_unblock_websites"):
-                win._unblock_websites()
-                
-        self.quit()
+            if win:
+                if hasattr(win, "main_window"):
+                    win = win.main_window
+                    
+                if hasattr(win, "timer") and win.timer and getattr(win.timer, "dnd_sync", False):
+                    win.timer._set_gnome_dnd(False)
+                    
+                if hasattr(win, "_unblock_websites"):
+                    win._unblock_websites()
+                    
+            self.quit()
+        except Exception as e:
+            print(f"Error during quit: {e}")
+        
         import os
         os._exit(0)
 
     def _attempt_quit(self, win):
-        if not win or not hasattr(win, "timer"):
-            self._do_quit()
-            return
+        try:
+            if not win or not hasattr(win, "timer"):
+                self._do_quit()
+                return
 
-        is_pomodoro_active = win.timer.is_running or win.timer.time_left < (win.timer.durations.get(win.timer.state, 0) * 60)
-        is_stopwatch_active = win.stopwatch.is_running or win.stopwatch.elapsed_seconds > 0
+            is_pomodoro_active = win.timer.is_running or win.timer.time_left < (win.timer.durations.get(win.timer.state, 0) * 60)
+            is_stopwatch_active = win.stopwatch.is_running or win.stopwatch.elapsed_seconds > 0
 
-        if is_pomodoro_active or is_stopwatch_active:
-            dialog = Adw.MessageDialog(
-                heading="Active Session in Progress",
-            )
-            active_win = self.props.active_window
-            dialog.set_transient_for(active_win if active_win else win)
-            
-            dialog.add_response("cancel", "Cancel")
-            
-            dialog.add_response("background", "Run in Background")
-            dialog.set_response_appearance("background", Adw.ResponseAppearance.SUGGESTED)
-            
-            if is_stopwatch_active and win.stopwatch.elapsed_seconds >= 300:
-                dialog.add_response("save_quit", "Save & Quit")
-                dialog.add_response("quit", "Discard & Quit")
-                dialog.set_response_appearance("quit", Adw.ResponseAppearance.DESTRUCTIVE)
-            else:
-                dialog.add_response("quit", "Quit")
-                dialog.set_response_appearance("quit", Adw.ResponseAppearance.DESTRUCTIVE)
+            if is_pomodoro_active or is_stopwatch_active:
+                dialog = Adw.MessageDialog(
+                    heading="Active Session in Progress",
+                )
+                active_win = self.props.active_window
+                dialog.set_transient_for(active_win if active_win else win)
                 
-            def on_response(dialog, response):
-                if response == "background":
-                    win.set_visible(False)
-                    if hasattr(win, "compact_window") and win.compact_window:
-                        win.compact_window.set_visible(False)
-                elif response == "save_quit":
-                    win._on_sw_save_clicked(None)
-                    self._do_quit()
-                elif response == "quit":
-                    self._do_quit()
+                dialog.add_response("cancel", "Cancel")
+                
+                dialog.add_response("background", "Run in Background")
+                dialog.set_response_appearance("background", Adw.ResponseAppearance.SUGGESTED)
+                
+                if is_stopwatch_active and win.stopwatch.elapsed_seconds >= 300:
+                    dialog.add_response("save_quit", "Save & Quit")
+                    dialog.add_response("quit", "Discard & Quit")
+                    dialog.set_response_appearance("quit", Adw.ResponseAppearance.DESTRUCTIVE)
+                else:
+                    dialog.add_response("quit", "Quit")
+                    dialog.set_response_appearance("quit", Adw.ResponseAppearance.DESTRUCTIVE)
                     
-            dialog.connect("response", on_response)
-            dialog.present()
-        else:
+                def on_response(dialog, response):
+                    if response == "background":
+                        win.set_visible(False)
+                        if hasattr(win, "compact_window") and win.compact_window:
+                            win.compact_window.set_visible(False)
+                    elif response == "save_quit":
+                        win._on_sw_save_clicked(None)
+                        self._do_quit()
+                    elif response == "quit":
+                        self._do_quit()
+                        
+                dialog.connect("response", on_response)
+                dialog.present()
+            else:
+                self._do_quit()
+        except Exception as e:
+            print(f"Error in _attempt_quit: {e}")
             self._do_quit()
 
     def _on_quit_action(self, action, param):

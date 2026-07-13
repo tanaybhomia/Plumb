@@ -228,6 +228,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         self._unblock_websites()
         if hasattr(self, 'compact_window') and self.compact_window:
             self.compact_window.destroy()
+            self.compact_window = None
         self._hide_overlays()
         return False
 
@@ -741,9 +742,6 @@ class PlumbWindow(Adw.ApplicationWindow):
             self._show_toast("Surfaced from Submerge Mode")
             
         self._update_submerge_theme()
-        style_manager = Adw.StyleManager.get_default()
-        style_manager.connect("notify::dark", self._on_dark_changed)
-        self._on_dark_changed(style_manager, None)
 
     def _update_submerge_theme(self):
         if self.is_submerged:
