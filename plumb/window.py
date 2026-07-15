@@ -222,15 +222,7 @@ class PlumbWindow(Adw.ApplicationWindow):
         except Exception as e:
             pass
 
-        self.connect("close-request", self._on_close_request)
-
-    def _on_close_request(self, window):
-        self._unblock_websites()
-        if hasattr(self, 'compact_window') and self.compact_window:
-            self.compact_window.destroy()
-            self.compact_window = None
-        self._hide_overlays()
-        return False
+    # self.connect("close-request", self._on_close_request) is now handled by application.py
 
     def _on_screensaver_active_changed(
         self,

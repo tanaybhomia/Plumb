@@ -160,6 +160,11 @@ class PlumbApplication(Adw.Application):
             if not win or not hasattr(win, "timer"):
                 self._do_quit()
                 return
+                
+            if not win.get_visible():
+                # App is running in the background. Don't show invisible dialogs, just quit.
+                self._do_quit()
+                return
 
             is_pomodoro_active = win.timer.is_running or win.timer.time_left < (win.timer.durations.get(win.timer.state, 0) * 60)
             is_stopwatch_active = win.stopwatch.is_running or win.stopwatch.elapsed_seconds > 0
