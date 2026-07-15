@@ -160,9 +160,12 @@ class PlumbApplication(Adw.Application):
             if not win or not hasattr(win, "timer"):
                 self._do_quit()
                 return
+            is_visible = win.get_visible()
+            if hasattr(win, "compact_window") and win.compact_window:
+                is_visible = is_visible or win.compact_window.get_visible()
                 
-            if not win.get_visible():
-                # App is running in the background. Don't show invisible dialogs, just quit.
+            if not is_visible:
+                # App is running in the background (both windows hidden). Don't show invisible dialogs, just quit.
                 self._do_quit()
                 return
 
@@ -275,7 +278,7 @@ class PlumbApplication(Adw.Application):
         win = self.props.active_window
         if win:
             main_win = getattr(win, "main_window", win)
-            if hasattr(main_win, "btn_submerge"):
+            if hasattr(main_win, "btn_submerge") and main_win.btn_submerge.get_sensitive():
                 main_win.btn_submerge.set_active(not main_win.btn_submerge.get_active())
 
     def _on_shortcuts_action(self, action, param):
