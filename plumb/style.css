@@ -175,3 +175,17 @@ window:not(.dark-theme).submerge-theme popover > contents { background-color: #f
 window:not(.dark-theme).submerge-theme popover > contents label { color: #023759; }
 window:not(.dark-theme).submerge-theme popover > contents listview row:selected, window:not(.dark-theme).submerge-theme popover > contents listview row:hover { background-color: rgba(2, 119, 189, 0.15); }
 window:not(.dark-theme).submerge-theme.compact-window { background-color: #cce4f7; }
+
+/* Submerge Theme - Toasts (Dark Mode) */
+window.dark-theme.submerge-theme toast { background-color: #08213e; color: white; }
+window.dark-theme.submerge-theme toast label.heading { color: white; }
+window.dark-theme.submerge-theme toast button.text-button, window.dark-theme.submerge-theme toast button.circular, window.dark-theme.submerge-theme toast image { color: white; }
+window.dark-theme.submerge-theme toast button.text-button, window.dark-theme.submerge-theme toast button.circular { background-color: rgba(255, 255, 255, 0.1); }
+window.dark-theme.submerge-theme toast button.text-button:hover, window.dark-theme.submerge-theme toast button.circular:hover { background-color: rgba(255, 255, 255, 0.2); }
+
+/* Submerge Theme - Toasts (Light Mode) */
+window:not(.dark-theme).submerge-theme toast { background-color: #023759; color: white; }
+window:not(.dark-theme).submerge-theme toast label.heading { color: white; }
+window:not(.dark-theme).submerge-theme toast button.text-button, window:not(.dark-theme).submerge-theme toast button.circular, window:not(.dark-theme).submerge-theme toast image { color: white; }
+window:not(.dark-theme).submerge-theme toast button.text-button, window:not(.dark-theme).submerge-theme toast button.circular { background-color: rgba(255, 255, 255, 0.1); }
+window:not(.dark-theme).submerge-theme toast button.text-button:hover, window:not(.dark-theme).submerge-theme toast button.circular:hover { background-color: rgba(255, 255, 255, 0.2); }

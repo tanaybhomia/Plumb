@@ -736,12 +736,19 @@ class PlumbWindow(Adw.ApplicationWindow):
         self.is_submerged = button.get_active()
         db.set_setting("submerge_mode", str(self.is_submerged))
         
+        # Update theme first so the toast renders with the correct CSS context
+        self._update_submerge_theme()
+        
         if self.is_submerged:
             self._show_toast("Submerged into deep focus")
         else:
             self._show_toast("Surfaced from Submerge Mode")
-            
-        self._update_submerge_theme()
+        
+        # Refresh UI states to instantly update play/pause button icons
+        if hasattr(self, 'timer'):
+            self._set_running_ui_state(self.timer.is_running)
+        if hasattr(self, 'stopwatch'):
+            self._set_sw_running_ui_state(self.stopwatch.is_running)
 
     def _update_submerge_theme(self):
         if self.is_submerged:
